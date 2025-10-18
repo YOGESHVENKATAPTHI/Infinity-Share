@@ -1,0 +1,3743 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infinity Share</title>
+  <!-- Streamsaver for fallback streaming -->
+  <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.5/stream-saver.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+
+  <style>
+    /* Chat message styling */
+    .chat-message {
+      border-radius: 10px;
+      padding: 10px;
+      max-width: 70%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      position: relative;
+      margin-bottom: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    .sent,
+    .received {
+      background-color: #2d3748;
+      align-self: flex-start;
+    }
+
+    .highlighted {
+      background-color: #3b82f6;
+    }
+
+    .message-date {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      position: absolute;
+      bottom: -16px;
+      right: 0;
+      white-space: nowrap;
+    }
+
+    .header-icon {
+      transition: color 0.3s ease;
+    }
+
+    .header-icon:hover {
+      color: #3b82f6;
+    }
+
+    body {
+      background-color: #1a202c;
+      color: white;
+      overflow: hidden;
+    }
+
+    .file-preview {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .sending-indicator {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 32, 44, 0.85);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      display: none;
+    }
+
+    .sending-indicator.active {
+      display: flex;
+    }
+
+    .sending-spinner {
+      animation: spin 1s linear infinite;
+      font-size: 3rem;
+      height: 60px;
+      width: 60px;
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top: 6px solid #3b82f6;
+      border-radius: 50%;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .indicator-message {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #e5e7eb;
+      margin-top: 20px;
+    }
+
+    .indicator-icon {
+      font-size: 4rem;
+      color: #3b82f6;
+      margin-bottom: 15px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
+    }
+
+    .progress-container {
+      background: #1f2937;
+      padding: 20px;
+      border-radius: 10px;
+      width: 350px;
+      text-align: center;
+    }
+
+    #search-bar {
+      background-color: rgba(31, 41, 55, 0.95);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 20;
+    }
+
+    #search-input {
+      transition: width 0.3s ease-in-out;
+      color: #e5e7eb;
+      width: 100%;
+    }
+
+    #close-search:hover {
+      transform: scale(1.1);
+      color: #f87171;
+    }
+
+    .image-preview {
+      transition: transform 0.2s ease;
+    }
+
+    .image-preview:hover {
+      transform: scale(1.05);
+    }
+
+    .speed-indicator {
+      font-size: 0.875rem;
+      color: #60a5fa;
+      margin-top: 8px;
+    }
+
+    .eta-indicator {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .chunk-progress {
+      font-size: 0.75rem;
+      color: #10b981;
+      margin-top: 4px;
+    }
+
+    .progress-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.75rem;
+    }
+
+    .realtime-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(45deg, #10b981, #3b82f6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+
+    /* Enhanced progress bar animations */
+    #download-progress-bar {
+      transition: width 0.3s ease-out, background-color 0.3s ease;
+      background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+      background-size: 200% 100%;
+      animation: progressGradient 2s ease-in-out infinite;
+    }
+
+    @keyframes progressGradient {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* Smooth progress text updates */
+    #download-progress-text {
+      transition: color 0.3s ease;
+    }
+
+    /* Enhanced speed and ETA displays */
+    #download-speed-display,
+    #download-eta-display {
+      transition: all 0.3s ease;
+    }
+
+    #download-speed-display {
+      background: linear-gradient(45deg, #10b981, #059669);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: bold;
+    }
+
+    #download-eta-display {
+      background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: bold;
+    }
+
+    /* Opening indicator specific styles */
+    #file-opening-indicator {
+      z-index: 9999 !important;
+      background: rgba(0, 0, 0, 0.95) !important;
+      backdrop-filter: blur(10px);
+      border: 2px solid #8b5cf6;
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+    }
+
+    #file-opening-indicator.active {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 50px rgba(139, 92, 246, 0.8);
+      }
+
+      100% {
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+      }
+    }
+
+    #opening-progress-bar {
+      transition: width 0.3s ease-out, background-color 0.3s ease;
+      background: linear-gradient(90deg, #8b5cf6, #a855f7, #c084fc);
+      background-size: 200% 100%;
+      animation: progressGradient 2s ease-in-out infinite;
+    }
+
+    #opening-speed-display {
+      background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: bold;
+    }
+
+    #opening-eta-display {
+      background: linear-gradient(45deg, #a855f7, #9333ea);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: bold;
+    }
+
+    .chunk-progress {
+      background: #10b981;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.625rem;
+      animation: pulse 1.5s infinite;
+    }
+  </style>
+</head>
+
+<body class="flex flex-col h-screen bg-gray-900 text-white">
+  <!-- Header -->
+  <header class="bg-gray-800 py-4 px-6 flex justify-between items-center shadow-md fixed top-0 w-full z-10">
+    <div class="flex items-center space-x-4">
+      <button id="back-button" class="text-gray-400 hover:text-white header-icon" aria-label="Go back">
+        <i class="fas fa-arrow-left text-2xl"></i>
+      </button>
+      <div class="flex items-center space-x-2">
+        <img id="forumAvatar"
+          src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0Qjc2ODgiLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeD0iOCIgeT0iOCI+CjxwYXRoIGQ9Ik0xMiA2QzEzLjEgNiAxNCAxNiAxNSAxN0MxNiAxOCAxNyAxOCAxOCAxOEgyMkMyMi41NiAxOCAyMyAxOC40NCAyMyAxOVYyMEMyMyAyMC41NiAyMi41NiAyMSAyMiAyMUgyQzEuNDQgMjEgMSAyMC41NiAxIDIwVjE5QzEgMTguNDQgMS40NCAxOCAyIDE4SDZDNyAxOCA4IDE4IDkgMTdDMTAgMTYgMTEgNiAxMiA2WiIgZmlsbD0iI0ZGRkZGRiIvPgo8L3N2Zz4KPC9zdmc+"
+          alt="room" class="w-10 h-10 rounded-full" />
+        <div>
+          <h1 id="dynamic-room-name" class="text-xl font-bold"></h1>
+        </div>
+      </div>
+    </div>
+    <div class="flex space-x-4">
+      <button id="toggle-search" class="text-gray-400 hover:text-white header-icon" aria-label="Search">
+        <i class="fas fa-search text-2xl"></i>
+      </button>
+      <button id="account-status" class="text-gray-400 hover:text-white header-icon" aria-label="Account Status"
+        title="Show SSE Connection Status">
+        <i class="fas fa-server text-2xl"></i>
+      </button>
+      <button id="refresh-accounts" class="text-gray-400 hover:text-white header-icon" aria-label="Refresh Accounts"
+        title="Refresh SSE Connection (Ctrl+R)">
+        <i class="fas fa-sync-alt text-2xl"></i>
+      </button>
+      <button id="options-button" class="text-gray-400 hover:text-white header-icon" aria-label="More options">
+        <i class="fas fa-ellipsis-v text-2xl"></i>
+      </button>
+      <div id="options-menu" class="hidden absolute right-6 mt-12 bg-gray-700 text-white rounded-lg shadow-lg py-2">
+        <a href="#" id="logout-button" class="block px-4 py-2 hover:bg-gray-600">Logout</a>
+        <a href="#" id="switch-account" class="block px-4 py-2 hover:bg-gray-600">Switch Account</a>
+        <a href="#" id="account-stats" class="block px-4 py-2 hover:bg-gray-600">Account Stats</a>
+      </div>
+    </div>
+  </header>
+  <!-- Search Bar -->
+  <div id="search-bar"
+    class="fixed top-0 left-0 w-full bg-gray-800 p-4 shadow-md transform -translate-y-full transition-transform duration-300 ease-in-out z-20">
+    <div class="flex items-center space-x-2">
+      <button id="search-button" class="text-gray-400 hover:text-white transition duration-300" aria-label="Search">
+        <i class="fas fa-search text-2xl"></i>
+      </button>
+      <input type="text" id="search-input" placeholder="Search messages or files..."
+        class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <button id="close-search" class="text-gray-400 hover:text-white transition duration-300"
+        aria-label="Close search">
+        <i class="fas fa-times text-2xl"></i>
+      </button>
+    </div>
+  </div>
+  <!-- Chat Container -->
+  <div class="flex flex-col flex-1 overflow-hidden pt-16 pb-20">
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4"></div>
+  </div>
+  <!-- Message Input -->
+  <div class="bg-gray-800 p-3 flex items-center shadow-md fixed bottom-0 w-full z-10">
+    <button id="attach-file" class="text-gray-400 hover:text-white mr-4" aria-label="Attach file">
+      <i class="fas fa-paperclip text-2xl"></i>
+    </button>
+    <textarea id="message-input" placeholder="Type a message..."
+      class="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      rows="1"></textarea>
+    <input type="file" id="file-input" class="hidden" />
+    <button id="send-message"
+      class="bg-blue-500 text-white px-4 py-2 rounded-full ml-4 hover:bg-blue-400 transition duration-300"
+      aria-label="Send message">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+  </div>
+  <!-- Text Message Sending Indicator -->
+  <div id="text-sending-indicator" class="sending-indicator">
+    <div class="flex flex-col items-center">
+      <i class="fas fa-comments indicator-icon"></i>
+      <div class="sending-spinner"></div>
+      <p class="indicator-message">Sending your message...</p>
+    </div>
+  </div>
+  <!-- Enhanced File Uploading Indicator -->
+  <div id="file-sending-indicator" class="sending-indicator">
+    <div class="progress-container">
+      <div class="realtime-indicator">LIVE</div>
+      <div class="text-blue-400 mb-4">
+        <i class="fas fa-file-upload text-6xl"></i>
+      </div>
+      <div id="file-name-text" class="text-white mb-2 font-semibold"></div>
+      <div class="relative pt-1">
+        <div class="flex mb-2 items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+              Uploading File
+            </span>
+          </div>
+          <div class="text-right">
+            <span id="progress-text" class="text-xs font-semibold inline-block text-blue-600">0% (0 MB of 0 MB)</span>
+          </div>
+        </div>
+        <div class="overflow-hidden h-3 mb-4 text-xs flex rounded bg-blue-200">
+          <div id="progress-bar" style="width:0%"
+            class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-300">
+          </div>
+        </div>
+      </div>
+      <div class="progress-details">
+        <div>
+          <div id="speed-display" class="speed-indicator">Speed: 0 MB/s</div>
+          <div id="eta-display" class="eta-indicator">ETA: Calculating...</div>
+        </div>
+        <div>
+          <div id="chunk-display" class="chunk-progress">Chunks: 0/0</div>
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mt-4">Ultra-fast streaming upload in progress...</p>
+    </div>
+  </div>
+  <!-- Enhanced File Downloading Indicator -->
+  <div id="file-downloading-indicator" class="sending-indicator">
+    <div class="progress-container">
+      <div class="realtime-indicator">LIVE</div>
+      <div class="text-blue-400 mb-4">
+        <i class="fas fa-file-download text-6xl"></i>
+      </div>
+      <div id="download-file-name-text" class="text-white mb-2 font-semibold"></div>
+      <div class="relative pt-1">
+        <div class="flex mb-2 items-center justify-between">
+          <div>
+            <span
+              class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">
+              Downloading File
+            </span>
+          </div>
+          <div class="text-right">
+            <span id="download-progress-text" class="text-xs font-semibold inline-block text-green-600">0% (0 MB of 0
+              MB)</span>
+          </div>
+        </div>
+        <div class="overflow-hidden h-3 mb-4 text-xs flex rounded bg-green-200">
+          <div id="download-progress-bar" style="width:0%"
+            class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-300">
+          </div>
+        </div>
+      </div>
+      <div class="progress-details">
+        <div>
+          <div id="download-speed-display" class="speed-indicator text-green-400">Speed: 0 MB/s</div>
+          <div id="download-eta-display" class="eta-indicator">ETA: Calculating...</div>
+        </div>
+        <div>
+          <div id="download-chunk-display" class="chunk-progress text-green-400">Chunk: 0/0</div>
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mt-4">Ultra-fast streaming download in progress...</p>
+    </div>
+  </div>
+
+  <!-- File Opening Progress Popup -->
+  <div id="file-opening-indicator" class="sending-indicator">
+    <div class="progress-container">
+      <div class="realtime-indicator">LIVE</div>
+      <div class="text-purple-400 mb-4">
+        <i class="fas fa-file-alt text-6xl"></i>
+      </div>
+      <div id="opening-file-name-text" class="text-white mb-2 font-semibold"></div>
+      <div class="relative pt-1">
+        <div class="flex mb-2 items-center justify-between">
+          <div>
+            <span
+              class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-purple-600 bg-purple-200">
+              Opening File
+            </span>
+          </div>
+          <div class="text-right">
+            <span id="opening-progress-text" class="text-xs font-semibold inline-block text-purple-600">0% (0 MB of 0
+              MB)</span>
+          </div>
+        </div>
+        <div class="overflow-hidden h-3 mb-4 text-xs flex rounded bg-purple-200">
+          <div id="opening-progress-bar" style="width:0%"
+            class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-purple-500 transition-all duration-300">
+          </div>
+        </div>
+      </div>
+      <div class="progress-details">
+        <div>
+          <div id="opening-speed-display" class="speed-indicator text-purple-400">Speed: 0 MB/s</div>
+          <div id="opening-eta-display" class="eta-indicator">ETA: Calculating...</div>
+        </div>
+        <div>
+          <div id="opening-chunk-display" class="chunk-progress text-purple-400">Chunk: 0/0</div>
+        </div>
+      </div>
+      <p class="text-gray-400 text-sm mt-4">Preparing file for opening...</p>
+      <div class="mt-4 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+        <span class="ml-2 text-purple-400 text-sm">Processing...</span>
+      </div>
+    </div>
+  </div>
+  <!-- Video Modal -->
+  <div id="videoModal"
+    class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity duration-300 ease-in-out">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center w-full max-w-3xl mx-4 sm:mx-6 lg:mx-8 xl:mx-auto">
+      <div class="video-container flex flex-col items-center">
+        <video id="videoPlayer" class="rounded-md mt-4 shadow-lg w-full h-auto max-h-80 sm:max-h-96 lg:max-h-120"
+          controls preload="auto">
+          <source src="" type="video/mp4" />
+        </video>
+      </div>
+      <div class="flex flex-col sm:flex-row justify-between items-center mt-4 space-y-4 sm:space-y-0">
+        <a id="downloadVideo"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          download>
+          <i class="fas fa-download mr-2"></i> Download
+        </a>
+        <button id="closeVideoModal"
+          class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-red-400">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+  <script>
+    // =============================================================================
+    // PROFESSIONAL POLLING CLIENT - PRIMARY REAL-TIME COMMUNICATION
+    // =============================================================================
+
+    // Main polling client class
+    class PollingRealTimeClient {
+      constructor(roomName, userId) {
+        this.roomName = roomName;
+        this.userId = userId;
+        this.isConnected = false;
+        this.lastTimestamp = 0;
+        this.pollInterval = 2000; // Start with 2 seconds
+        this.minInterval = 500;    // Fastest: 500ms
+        this.maxInterval = 5000;   // Slowest: 5s
+        this.pollTimer = null;
+        this.eventHandlers = new Map();
+        this.failureCount = 0;
+        this.maxFailures = 5;
+        this.useLongPoll = true; // Enable long-polling
+        this.stats = {
+          pollsAttempted: 0,
+          pollsSuccessful: 0,
+          eventsReceived: 0,
+          errorsOccurred: 0,
+          lastConnected: null,
+          averageLatency: 0
+        };
+        console.log('[Polling] Initialized professional polling client');
+      }
+
+      async connect() {
+        console.log('[Polling] Connecting to room:', this.roomName);
+
+        try {
+          // Join room via polling system
+          const response = await fetch(`${SERVER_URL}/join-room-polling`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomName: this.roomName,
+              userId: this.userId
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to join room: ${response.status}`);
+          }
+
+          const data = await response.json();
+          this.isConnected = true;
+          this.stats.lastConnected = Date.now();
+
+          // Use recommended interval from server
+          if (data.recommendedInterval) {
+            this.pollInterval = data.recommendedInterval;
+          }
+
+          console.log('[Polling] Connected successfully:', data);
+
+          // Start polling
+          this.startPolling();
+
+          return data;
+        } catch (error) {
+          console.error('[Polling] Connection error:', error);
+          throw error;
+        }
+      }
+
+      startPolling() {
+        if (this.pollTimer) {
+          clearTimeout(this.pollTimer);
+        }
+
+        this.poll();
+      }
+
+      async poll() {
+        if (!this.isConnected) return;
+
+        this.stats.pollsAttempted++;
+        const pollStartTime = Date.now();
+
+        try {
+          // Build poll URL with parameters
+          let url = `${SERVER_URL}/poll/${this.userId}?since=${this.lastTimestamp}`;
+          if (this.useLongPoll) {
+            url += '&longPoll=true';
+          }
+
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Poll failed: ${response.status}`);
+          }
+
+          const data = await response.json();
+          this.stats.pollsSuccessful++;
+          this.failureCount = 0; // Reset failure count on success
+
+          // Update timestamp
+          if (data.timestamp) {
+            this.lastTimestamp = data.timestamp;
+          }
+
+          // Update poll interval based on server recommendation
+          if (data.recommendedInterval) {
+            this.pollInterval = data.recommendedInterval;
+          }
+
+          // Process events
+          if (data.events && data.events.length > 0) {
+            console.log(`[Polling] Received ${data.events.length} event(s)`);
+            this.stats.eventsReceived += data.events.length;
+
+            // Calculate latency
+            const latency = Date.now() - pollStartTime;
+            this.stats.averageLatency = (this.stats.averageLatency + latency) / 2;
+
+            // Handle each event
+            for (const event of data.events) {
+              this.handleEvent(event.eventType, event.data);
+            }
+
+            // Speed up polling temporarily when receiving events
+            this.pollInterval = Math.max(this.minInterval, this.pollInterval / 2);
+          } else {
+            // Slow down polling when no events
+            this.pollInterval = Math.min(this.maxInterval, this.pollInterval * 1.2);
+          }
+
+        } catch (error) {
+          console.error('[Polling] Poll error:', error);
+          this.stats.errorsOccurred++;
+          this.failureCount++;
+
+          // Exponential backoff on failures
+          if (this.failureCount >= this.maxFailures) {
+            console.error('[Polling] Too many failures, attempting reconnection...');
+            this.reconnect();
+            return;
+          }
+
+          // Increase interval on error
+          this.pollInterval = Math.min(this.maxInterval, this.pollInterval * 1.5);
+        }
+
+        // Schedule next poll
+        this.pollTimer = setTimeout(() => this.poll(), this.pollInterval);
+      }
+
+      async reconnect() {
+        console.log('[Polling] Reconnecting...');
+        this.disconnect();
+        this.failureCount = 0;
+
+        setTimeout(async () => {
+          try {
+            await this.connect();
+          } catch (error) {
+            console.error('[Polling] Reconnection failed:', error);
+            setTimeout(() => this.reconnect(), 5000);
+          }
+        }, 1000);
+      }
+
+      disconnect() {
+        console.log('[Polling] Disconnecting...');
+        this.isConnected = false;
+        if (this.pollTimer) {
+          clearTimeout(this.pollTimer);
+          this.pollTimer = null;
+        }
+
+        // Notify server
+        fetch(`${SERVER_URL}/leave-room-polling`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomName: this.roomName,
+            userId: this.userId
+          })
+        }).catch(err => console.warn('[Polling] Leave room error:', err));
+      }
+
+      on(eventType, handler) {
+        if (!this.eventHandlers.has(eventType)) {
+          this.eventHandlers.set(eventType, []);
+        }
+        this.eventHandlers.get(eventType).push(handler);
+      }
+
+      off(eventType, handler) {
+        const handlers = this.eventHandlers.get(eventType);
+        if (handlers) {
+          const index = handlers.indexOf(handler);
+          if (index > -1) {
+            handlers.splice(index, 1);
+          }
+        }
+      }
+
+      handleEvent(eventType, data) {
+        const handlers = this.eventHandlers.get(eventType);
+        if (handlers) {
+          handlers.forEach(handler => {
+            try {
+              handler(data);
+            } catch (error) {
+              console.error(`[Polling] Handler error for ${eventType}:`, error);
+            }
+          });
+        }
+      }
+
+      getStats() {
+        return {
+          ...this.stats,
+          isConnected: this.isConnected,
+          pollInterval: this.pollInterval,
+          uptime: this.stats.lastConnected ? Date.now() - this.stats.lastConnected : 0
+        };
+      }
+    }
+
+    // Main SSE Client Class
+    class SSERealTimeClient {
+      constructor(roomName, userId) {
+        this.roomName = roomName;
+        this.userId = userId;
+        this.eventSource = null;
+        this.isConnected = false;
+        this.connectionAttempts = 0;
+        this.maxConnectionAttempts = 10; // Increased retry attempts
+        this.reconnectDelay = 1000; // Start with 1 second
+        this.maxReconnectDelay = 30000; // Max 30 seconds between retries
+        this.heartbeatTimeout = null;
+        this.lastHeartbeat = 0;
+        this.lastEventId = null; // Track last event ID for reconnection
+        this.eventHandlers = new Map();
+        this.pollingFallback = null; // Simplified - no polling fallback for now
+        this.connectionType = 'unknown'; // 'sse', 'polling', or 'unknown'
+        this.isInitialized = false;
+        this.lastEventTime = Date.now(); // Track last event for latency
+        this.missedEventsQueue = []; // Queue for events during reconnection
+        this.isReconnecting = false;
+        this.stats = {
+          connectionsAttempted: 0,
+          reconnectionsSuccessful: 0,
+          messagesReceived: 0,
+          errorsOccurred: 0,
+          lastConnected: null,
+          uptime: 0,
+          averageLatency: 0
+        };
+      }
+
+      async connect() {
+        return await this.initialize();
+      }
+
+      async initialize() {
+        console.log('[SSE] Initializing SSE Real-Time Client...');
+        console.log('[SSE] Step 1: Connecting to SSE endpoint...');
+
+        // Connect to SSE FIRST
+        await this.connectSSE();
+
+        // Wait for connection to be fully established
+        console.log('[SSE] Step 2: Waiting for SSE connection to stabilize...');
+        await this.waitForConnection(3000); // Wait up to 3 seconds
+
+        if (!this.isConnected) {
+          throw new Error('Failed to establish SSE connection after 3 seconds');
+        }
+
+        console.log('[SSE] Step 3: SSE connection established, joining room...');
+        await this.joinRoom();
+
+        // Verify connection after join
+        console.log('[SSE] Step 4: Verifying room connection...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await this.verifyRoomConnection();
+
+        this.setupPollingHandlers();
+        this.isInitialized = true;
+        console.log('[SSE] ✅ Initialization complete!');
+      }
+
+      async waitForConnection(timeout = 3000) {
+        const startTime = Date.now();
+        while (!this.isConnected && (Date.now() - startTime) < timeout) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        console.log(`[SSE] Connection wait completed. Connected: ${this.isConnected}`);
+      }
+
+      async verifyRoomConnection() {
+        try {
+          const response = await fetch(`${SERVER_URL}/verify-connection/${this.roomName}/${this.userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[SSE] Connection verification:', data);
+            if (!data.connected) {
+              console.warn('[SSE] Server reports not connected, will retry...');
+              // Try to reconnect
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              await this.connectSSE();
+            }
+          }
+        } catch (error) {
+          console.warn('[SSE] Connection verification failed:', error.message);
+        }
+      }
+
+      async joinRoom() {
+        try {
+          console.log(`[SSE] Sending join-room-sse request for room: ${this.roomName}, userId: ${this.userId}`);
+
+          const response = await fetch(`${SERVER_URL}/join-room-sse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomName: this.roomName,
+              userId: this.userId
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Failed to join room: ${response.status} - ${errorData.error || 'Unknown error'}`);
+          }
+
+          const data = await response.json();
+          console.log('[SSE] ✅ Successfully joined room:', data);
+
+          // Give server more time to register the connection and update roomConnections
+          console.log('[SSE] Waiting for server to register connection...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Increased wait time
+
+          return data;
+        } catch (error) {
+          console.error('[SSE] ❌ Error joining room:', error.message);
+          throw error;
+        }
+      }
+
+      async connectSSE() {
+        try {
+          this.stats.connectionsAttempted++;
+
+          // Build SSE URL with cloud-optimized parameters
+          let sseUrl = `${SERVER_URL}/events/${this.roomName}/${this.userId}`;
+          const params = new URLSearchParams();
+
+          if (this.lastEventId && this.isReconnecting) {
+            params.append('lastEventId', this.lastEventId);
+            console.log(`[SSE] 🔄 Reconnecting with last event ID: ${this.lastEventId}`);
+          }
+
+          // Add cloud optimization parameters
+          params.append('t', Date.now()); // Cache busting
+          params.append('v', '2.0'); // Version identifier
+
+          if (params.toString()) {
+            sseUrl += `?${params.toString()}`;
+          }
+
+          console.log(`[SSE] 🔌 Connecting to SSE endpoint: ${sseUrl}`);
+
+          // Create EventSource with enhanced configuration for cloud deployment
+          this.eventSource = new EventSource(sseUrl, {
+            withCredentials: false // Important: false for CORS with '*' origin
+          });
+
+          this.eventSource.onopen = () => {
+            console.log('[SSE] ✅ EventSource.onopen triggered - Connection opened!');
+            console.log('[SSE] ✅ ReadyState:', this.eventSource.readyState, '(0=CONNECTING, 1=OPEN, 2=CLOSED)');
+            this.isConnected = true;
+            this.connectionType = 'sse';
+            this.connectionAttempts = 0;
+            this.reconnectDelay = 1000; // Reset delay
+            this.stats.lastConnected = Date.now();
+
+            if (this.isReconnecting) {
+              this.stats.reconnectionsSuccessful++;
+              this.isReconnecting = false;
+              console.log('[SSE] 🎉 Successfully reconnected!');
+            }
+
+            this.stopPollingFallback();
+            this.resetHeartbeatTimeout();
+
+            console.log('[SSE] 📊 Connection stats:', {
+              isConnected: this.isConnected,
+              connectionType: this.connectionType,
+              roomName: this.roomName,
+              userId: this.userId
+            });
+          };
+
+          this.eventSource.onerror = (error) => {
+            console.error('[SSE] ❌ EventSource.onerror triggered:', error);
+            console.error('[SSE] ❌ ReadyState:', this.eventSource.readyState);
+            this.stats.errorsOccurred++;
+            this.isConnected = false;
+            this.isReconnecting = true;
+            this.handleConnectionError();
+          };
+
+          // Handle generic 'message' events (fallback)
+          this.eventSource.onmessage = (event) => {
+            console.log('[SSE] 📨 Generic message received:', event.data);
+            try {
+              const data = JSON.parse(event.data);
+              this.handleEvent('message', data);
+            } catch (e) {
+              console.warn('[SSE] Failed to parse generic message:', e);
+            }
+          };
+
+          // Set up custom event listeners
+          this.setupSSEEventHandlers();
+
+          console.log('[SSE] ⏳ EventSource created, waiting for connection...');
+
+        } catch (error) {
+          console.error('[SSE] ❌ Error creating EventSource:', error.message);
+          this.stats.errorsOccurred++;
+          this.startPollingFallback();
+        }
+      }
+
+      setupSSEEventHandlers() {
+        if (!this.eventSource) return;
+
+        // Set up listeners for different event types
+        this.eventSource.addEventListener('connected', (event) => {
+          console.log('[SSE] ✅ Connected event received:', event.data);
+          try {
+            const data = JSON.parse(event.data);
+            this.isConnected = true;
+            this.lastHeartbeat = Date.now();
+            this.resetHeartbeatTimeout();
+            this.handleEvent('connected', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse connected event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('heartbeat', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            this.lastHeartbeat = data.timestamp || Date.now();
+            this.resetHeartbeatTimeout();
+            console.log('[SSE] ❤️ Heartbeat received');
+            this.handleEvent('heartbeat', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse heartbeat event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('room-joined', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] 🚪 Room joined:', data);
+            if (data.userId === this.userId) {
+              showNotification("Successfully joined room", "success", 2000);
+            }
+            this.handleEvent('room-joined', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse room-joined event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('upload-progress', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] 📤 Upload progress:', data.progress + '%', 'fileId:', data.fileId);
+            if (data.userId === this.userId) {
+              updateUploadProgress(data);
+            }
+            this.handleEvent('upload-progress', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse upload-progress event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('byte-progress', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            // Reduced logging frequency for byte progress
+            if (data.uploaded % (10 * 1024 * 1024) === 0 || data.progress >= 100) {
+              console.log('[SSE] 📊 Byte progress:', data.progress.toFixed(1) + '%', `(${(data.uploaded / 1048576).toFixed(2)} MB)`);
+            }
+            if (data.userId === this.userId) {
+              updateByteProgress(data);
+            }
+            this.handleEvent('byte-progress', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse byte-progress event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('file-upload-complete', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] ✅ File upload completed:', data.fileName, 'fileId:', data.fileId);
+            if (data.userId === this.userId) {
+              handleFileUploadComplete(data);
+            }
+            this.handleEvent('file-upload-complete', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse file-upload-complete event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('file-upload-failed', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.error('[SSE] ❌ File upload failed:', data.fileName, 'error:', data.error);
+            if (data.userId === this.userId) {
+              handleFileUploadFailed(data);
+            }
+            this.handleEvent('file-upload-failed', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse file-upload-failed event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('upload-error', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] Upload error:', data);
+            if (data.userId === this.userId) {
+              handleUploadError(data);
+            }
+            this.handleEvent('upload-error', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse upload-error event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('upload-cancelled', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] Upload cancelled:', data);
+            if (data.userId === this.userId) {
+              handleUploadCancelled(data);
+            }
+            this.handleEvent('upload-cancelled', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse upload-cancelled event:', e);
+          }
+        });
+
+        this.eventSource.addEventListener('new-content', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('[SSE] New content:', data);
+            handleNewContent(data);
+            this.handleEvent('new-content', data);
+          } catch (e) {
+            console.warn('[SSE] Failed to parse new-content event:', e);
+          }
+        });
+
+        // Additional event types that may be sent by server
+        const additionalEventTypes = ['server-processing', 'chunk-assembly-progress',
+          'file-processing-started', 'upload-finished'];
+
+        additionalEventTypes.forEach(eventType => {
+          this.eventSource.addEventListener(eventType, (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              this.stats.messagesReceived++;
+              this.handleEvent(eventType, data);
+            } catch (error) {
+              console.error(`[SSE] Error parsing ${eventType} event:`, error);
+            }
+          });
+        });
+      }
+
+      startPollingFallback() {
+        if (this.pollingInterval) {
+          return; // Already polling
+        }
+
+        console.log('[SSE] 🔄 Starting polling fallback for cloud compatibility');
+        this.connectionType = 'polling';
+        this.isConnected = true; // Mark as connected via polling
+
+        let lastEventTime = Date.now();
+
+        this.pollingInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`${SERVER_URL}/poll/${this.userId}?since=${lastEventTime}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.events && data.events.length > 0) {
+                console.log(`[Polling] 📨 Received ${data.events.length} events`);
+                data.events.forEach(event => {
+                  this.handleEvent(event.eventType, event.data);
+                });
+                lastEventTime = Math.max(...data.events.map(e => e.timestamp));
+              }
+            } else {
+              console.error('[Polling] ❌ Poll request failed:', response.status);
+            }
+          } catch (error) {
+            console.error('[Polling] ❌ Poll error:', error.message);
+          }
+        }, 2000); // Poll every 2 seconds
+      }
+
+      stopPollingFallback() {
+        if (this.pollingInterval) {
+          console.log('[SSE] 🛑 Stopping polling fallback');
+          clearInterval(this.pollingInterval);
+          this.pollingInterval = null;
+        }
+      }
+
+      setupPollingHandlers() {
+        // Polling is now implemented above
+        console.log('[SSE] ✅ Polling fallback configured for cloud compatibility');
+      }
+
+      addEventListener(eventType, handler) {
+        if (!this.eventHandlers.has(eventType)) {
+          this.eventHandlers.set(eventType, []);
+        }
+        this.eventHandlers.get(eventType).push(handler);
+      }
+
+      // Alias for addEventListener to match API expectations
+      on(eventType, handler) {
+        return this.addEventListener(eventType, handler);
+      }
+
+      // Remove event listener
+      off(eventType, handler) {
+        const handlers = this.eventHandlers.get(eventType);
+        if (handlers) {
+          const index = handlers.indexOf(handler);
+          if (index > -1) {
+            handlers.splice(index, 1);
+            console.log(`[SSE] Removed listener for ${eventType}`);
+          }
+        }
+      }
+
+      handleEvent(eventType, data) {
+        const handlers = this.eventHandlers.get(eventType);
+        if (handlers) {
+          handlers.forEach(handler => {
+            try {
+              handler(data);
+            } catch (error) {
+              console.error(`[SSE] Handler error for ${eventType}:`, error);
+            }
+          });
+        }
+      }
+
+      handleConnectionError() {
+        console.log('[SSE] Handling connection error - Cloud environment detected');
+        this.isConnected = false;
+        this.connectionAttempts++;
+
+        // Enhanced reconnection strategy for cloud platforms
+        if (this.connectionAttempts < this.maxConnectionAttempts) {
+          // Exponential backoff with jitter for cloud deployment
+          const jitter = Math.random() * 1000; // 0-1 second jitter
+          const delay = Math.min(this.reconnectDelay + jitter, this.maxReconnectDelay);
+
+          console.log(`[SSE] 🔄 Cloud reconnection ${this.connectionAttempts}/${this.maxConnectionAttempts} in ${Math.round(delay)}ms`);
+
+          setTimeout(() => {
+            // Additional cloud-specific checks before reconnection
+            if (!document.hidden && navigator.onLine !== false) {
+              this.reconnect();
+            } else {
+              console.log('[SSE] 🔄 Delaying reconnection - page hidden or offline');
+              setTimeout(() => this.reconnect(), 2000);
+            }
+          }, delay);
+
+          this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay); // Gentler backoff
+        } else {
+          console.log('[SSE] ⚠️ Max reconnection attempts reached, enabling polling fallback for cloud compatibility');
+          this.startPollingFallback();
+        }
+      }
+
+      reconnect() {
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+        this.connectSSE();
+      }
+
+      resetHeartbeatTimeout() {
+        if (this.heartbeatTimeout) {
+          clearTimeout(this.heartbeatTimeout);
+        }
+
+        // Timeout set to 60 seconds (server sends heartbeat every 15s, so 4x buffer)
+        this.heartbeatTimeout = setTimeout(() => {
+          console.warn('[SSE] Heartbeat timeout, connection may be stale');
+          this.isReconnecting = true;
+          this.handleConnectionError();
+        }, 60000); // 60 seconds - 4x the server heartbeat interval
+      }
+
+      getStats() {
+        return {
+          ...this.stats,
+          connectionType: this.connectionType,
+          isConnected: this.isConnected,
+          lastHeartbeat: this.lastHeartbeat,
+          uptime: this.stats.lastConnected ? Date.now() - this.stats.lastConnected : 0
+        };
+      }
+
+      disconnect() {
+        console.log('[SSE] Disconnecting SSE client');
+        if (this.eventSource) {
+          this.eventSource.close();
+          this.eventSource = null;
+        }
+        if (this.heartbeatTimeout) {
+          clearTimeout(this.heartbeatTimeout);
+        }
+        this.stopPollingFallback();
+        this.isConnected = false;
+      }
+    }
+
+    // Duplicate SSERealTimeClient class removed - using the main implementation above
+    // Duplicate PollingFallback class removed - using the main implementation above
+
+    // =============================================================================
+    // ENHANCED CONFIGURATION
+    // =============================================================================
+    // Note: SERVER_URL, CHUNK_CONCURRENCY, PROGRESS_UPDATE_THROTTLE, REAL_TIME_UPDATES, 
+    // PREVIEW_THRESHOLD, roomName, and userId are already declared below in the existing code
+
+    // Initialize SSE real-time client
+    let sseRealTimeClient = null;
+
+    // Initialize the SSE real-time client
+    async function initializeSSERealTimeClient() {
+      try {
+        console.log('[SSEClient] Initializing SSE real-time client...');
+        sseRealTimeClient = new SSERealTimeClient(roomName, userId);
+        await sseRealTimeClient.connect();
+
+        console.log('[SSEClient] SSE client initialized successfully');
+
+        // Set up event handlers
+        setupSSEEventHandlers();
+        console.log('[SSEClient] Event handlers configured');
+
+      } catch (error) {
+        console.error('[SSEClient] Error initializing SSE client:', error.message);
+        console.log('[SSEClient] Will retry connection in 5 seconds...');
+        setTimeout(() => initializeSSERealTimeClient(), 5000);
+      }
+    }
+
+    // Set up SSE event handlers
+    function setupSSEEventHandlers() {
+      if (!sseRealTimeClient) return;
+
+      // File upload completion events
+      sseRealTimeClient.on('file-upload-complete', (data) => {
+        if (data.userId === userId) {
+          handleFileUploadComplete(data);
+        }
+      });
+
+      // File upload failed events
+      sseRealTimeClient.on('file-upload-failed', (data) => {
+        if (data.userId === userId) {
+          handleFileUploadFailed(data);
+        }
+      });
+
+      // Upload error events
+      sseRealTimeClient.on('upload-error', (data) => {
+        if (data.userId === userId) {
+          handleUploadError(data);
+        }
+      });
+
+      // Upload cancelled events
+      sseRealTimeClient.on('upload-cancelled', (data) => {
+        if (data.userId === userId) {
+          handleUploadCancelled(data);
+        }
+      });
+
+      // New content events
+      sseRealTimeClient.on('new-content', (data) => {
+        handleNewContent(data);
+      });
+
+      // Byte progress events (for real-time upload progress)
+      sseRealTimeClient.on('byte-progress', (data) => {
+        if (data.userId === userId) {
+          updateByteProgress(data);
+        }
+      });
+
+      // Server processing events (for chunk assembly)
+      sseRealTimeClient.on('server-processing', (data) => {
+        if (data.userId === userId) {
+          console.log('[SSE] Server processing:', data);
+          // Update progress indicators
+          updateByteProgress(data);
+        }
+      });
+
+      // Chunk assembly progress
+      sseRealTimeClient.on('chunk-assembly-progress', (data) => {
+        if (data.userId === userId) {
+          console.log('[SSE] Chunk assembly:', data);
+          updateByteProgress(data);
+        }
+      });
+
+      // Room joined events
+      sseRealTimeClient.on('room-joined', (data) => {
+        if (data.userId !== userId) {
+          console.log(`[SSE] User ${data.userId} joined room`);
+        }
+      });
+
+      // User left events
+      sseRealTimeClient.on('user-left', (data) => {
+        if (data.userId !== userId) {
+          console.log(`[SSE] User ${data.userId} left room`);
+        }
+      });
+
+      // File deleted events
+      sseRealTimeClient.on('file-deleted', (data) => {
+        if (data.roomName === roomName) {
+          location.reload(); // Refresh to see changes
+          showNotification(`File deleted: ${data.filename}`, 'info');
+        }
+      });
+    }
+
+    // Enhanced SSE connection monitoring
+    function showAccountStatus() {
+      if (!sseRealTimeClient) {
+        showNotification("SSE client not initialized", "warning", 3000);
+        return;
+      }
+
+      const stats = sseRealTimeClient.getStats();
+
+      let message = `Connection: ${stats.isConnected ? 'Connected' : 'Disconnected'}\nType: ${stats.connectionType || 'SSE'}`;
+      message += `\nConnection attempts: ${stats.connectionsAttempted}`;
+      message += `\nReconnections: ${stats.reconnectionsSuccessful}`;
+      message += `\nEvents received: ${stats.eventsReceived || 0}`;
+      message += `\nErrors: ${stats.errorsOccurred}`;
+
+      if (stats.lastConnected) {
+        const uptime = Math.floor(stats.uptime / 1000);
+        message += `\nUptime: ${uptime}s`;
+      }
+
+      if (stats.averageLatency > 0) {
+        message += `\nAvg Latency: ${stats.averageLatency.toFixed(0)}ms`;
+      }
+
+      showNotification(message, "info", 5000);
+    }
+
+    // Enhanced error handling for uploads
+    async function uploadFileWithRotation(file) {
+      const fileName = file.name;
+      const ext = fileName.toLowerCase().split('.').pop();
+      const dangerousExts = ['exe', 'bat', 'cmd', 'scr', 'pif', 'vbs', 'js'];
+
+      if (dangerousExts.includes(ext)) {
+        if (!confirm(`Warning: .${ext} files can be dangerous. Continue uploading?`)) {
+          return;
+        }
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("userId", userId);
+
+        // Add account info if available
+        if (sseRealTimeClient) {
+          const currentAccount = sseRealTimeClient.connected;
+          if (currentAccount) {
+            formData.append("accountId", currentAccount.id);
+          }
+        }
+
+        document.getElementById("file-name-text").textContent = fileName;
+        document.getElementById("file-sending-indicator").classList.add("active");
+        currentUploadProgress.startTime = Date.now();
+        currentUploadProgress.fileName = fileName;
+
+        // Show initial file info
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        showNotification(`Starting upload: ${fileName} (${fileSizeMB} MB)`, "info", 3000);
+
+        const response = await fetch(SERVER_URL + `/room/${encodeURIComponent(roomName)}/upload-file`, {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to upload file");
+        }
+
+        const result = await response.json();
+        console.log("File upload initiated:", result);
+
+        // Show upload initiated notification
+        showNotification(`Upload initiated for ${fileName}`, "success", 3000);
+
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        showNotification("Error uploading file: " + error.message, "error", 5000);
+        document.getElementById("file-sending-indicator").classList.remove("active");
+        resetProgressIndicators();
+      }
+    }
+
+    // Initialize the system
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await initializeSSERealTimeClient();
+      } catch (error) {
+        console.error('Error initializing SSE real-time client:', error);
+        console.log('SSE client will handle reconnection automatically');
+      }
+    });
+
+    // Enhanced visibility change handling for cloud deployment
+    document.addEventListener('visibilitychange', () => {
+      const isVisible = document.visibilityState === 'visible';
+      console.log('[SSE] 👁️ Tab visibility changed:', isVisible ? 'VISIBLE' : 'HIDDEN');
+
+      if (sseRealTimeClient) {
+        if (isVisible) {
+          // Tab became visible - check connection health
+          setTimeout(() => {
+            if (!sseRealTimeClient.isConnected) {
+              console.log('[SSE] 🔄 Reconnecting after tab became visible');
+              sseRealTimeClient.connectionAttempts = 0; // Reset attempts
+              sseRealTimeClient.reconnectDelay = 1000; // Reset delay
+              sseRealTimeClient.reconnect();
+            } else {
+              console.log('[SSE] ✅ Connection already active on tab focus');
+            }
+          }, 1000); // Small delay to let browser stabilize
+        } else {
+          // Tab became hidden - prepare for potential reconnection
+          console.log('[SSE] 😴 Tab hidden - connection may be throttled by browser');
+        }
+      }
+    });
+
+    // Enhanced keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'a':
+            e.preventDefault();
+            showAccountStatus();
+            break;
+          case 'r':
+            e.preventDefault();
+            if (sseRealTimeClient) {
+              sseRealTimeClient.reconnect();
+            }
+            break;
+          case 's':
+            e.preventDefault();
+            if (sseRealTimeClient) {
+              const stats = sseRealTimeClient.getStats();
+              console.log('Polling Connection Stats:', stats);
+              showNotification(`Polling: ${stats.isConnected ? 'Connected' : 'Disconnected'}`, "info", 3000);
+            }
+            break;
+        }
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', async () => {
+      try {
+        // Disconnect SSE client
+        if (sseRealTimeClient) {
+          sseRealTimeClient.disconnect();
+        }
+      } catch (error) {
+        console.warn('Failed to cleanup on unload:', error);
+      }
+    });
+
+    // =============================================================================
+    // EXISTING FUNCTIONS (UNCHANGED)
+    // =============================================================================
+
+    document.addEventListener('visibilitychange', () => {
+      const isVisible = document.visibilityState === 'visible';
+      console.log('Tab visibility changed:', isVisible);
+
+      // If tab became visible, send an immediate heartbeat
+      if (isVisible) {
+        fetch(`${SERVER_URL}/ping`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(error => console.warn('Visibility heartbeat failed:', error));
+      }
+    });
+
+
+
+    /* Enhanced Configuration */
+    const SERVER_URL = window.location.origin; // Use same origin to avoid CORS 
+    const CHUNK_CONCURRENCY = 12;
+    const PROGRESS_UPDATE_THROTTLE = 100; // ms
+    const REAL_TIME_UPDATES = true;
+    const PREVIEW_THRESHOLD = 50 * 1024 * 1024; // 50MB threshold for file previews
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.worker.min.js";
+
+    const roomName = localStorage.getItem("roomName");
+    if (!roomName) {
+      alert("No room specified. Redirecting to home page.");
+      window.location.href = "/";
+    }
+
+    // Generate unique user ID for this session
+    const userId = localStorage.getItem("userId") || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem("userId", userId);
+
+    // Duplicate code section removed - functionality is already implemented above
+
+    function supportsFileSystem() {
+      return 'showSaveFilePicker' in window;
+    }
+    function updateDownloadUI(loaded, total, startTime, chunkIndex, totalChunks) {
+      const progress = total > 0 ? (loaded / total) * 100 : 0;
+      const pct = progress.toFixed(1);
+
+      // Update progress bar
+      document.getElementById("download-progress-bar").style.width = `${pct}%`;
+
+      // Update progress text
+      document.getElementById("download-progress-text").textContent =
+        total
+          ? `${pct}% (${(loaded / 1048576).toFixed(2)} MB of ${(total / 1048576).toFixed(2)} MB)`
+          : `${(loaded / 1048576).toFixed(2)} MB`;
+
+      // Update chunk display
+      if (chunkIndex !== undefined && totalChunks !== undefined) {
+        document.getElementById("download-chunk-display").textContent = `Chunk: ${chunkIndex + 1}/${totalChunks}`;
+      }
+
+      // Calculate and display speed
+      if (startTime && total) {
+        const elapsed = (Date.now() - startTime) / 1000; // seconds
+        const speed = loaded / elapsed; // bytes/sec
+        document.getElementById("download-speed-display").textContent =
+          `Speed: ${(speed / 1048576).toFixed(2)} MB/s`;
+
+        // Calculate ETA
+        const eta = speed > 0 ? (total - loaded) / speed : null;
+        if (eta) {
+          const m = Math.floor(eta / 60), s = Math.floor(eta % 60);
+          document.getElementById("download-eta-display").textContent =
+            `ETA: ${m}m ${s}s`;
+        } else {
+          document.getElementById("download-eta-display").textContent = "ETA: Calculating...";
+        }
+      }
+
+      // Update browser title
+      document.title = `Downloading: ${pct}% - Infinity Share`;
+    }
+
+    // Enhanced function for real-time byte-level progress updates
+    function updateDownloadProgressRealTime(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk = 0) {
+      const progress = total > 0 ? (loaded / total) * 100 : 0;
+      const pct = progress.toFixed(1);
+
+      // Update progress bar with smooth animation
+      const progressBar = document.getElementById("download-progress-bar");
+      progressBar.style.width = `${pct}%`;
+      progressBar.style.transition = "width 0.1s ease-out";
+
+      // Update progress text with more detailed info
+      const progressText = document.getElementById("download-progress-text");
+      if (total) {
+        const loadedMB = (loaded / 1048576).toFixed(2);
+        const totalMB = (total / 1048576).toFixed(2);
+        const loadedKB = (loaded / 1024).toFixed(0);
+        const totalKB = (total / 1024).toFixed(0);
+
+        // Show KB precision for smaller files, MB for larger files
+        if (total < 1048576) { // Less than 1MB
+          progressText.textContent = `${pct}% (${loadedKB} KB of ${totalKB} KB)`;
+        } else {
+          progressText.textContent = `${pct}% (${loadedMB} MB of ${totalMB} MB)`;
+        }
+      } else {
+        progressText.textContent = `${(loaded / 1024).toFixed(0)} KB downloaded`;
+      }
+
+      // Update chunk display
+      if (chunkIndex !== undefined && totalChunks !== undefined) {
+        document.getElementById("download-chunk-display").textContent = `Chunk: ${chunkIndex + 1}/${totalChunks}`;
+      }
+
+      // Calculate and display speed with more precision
+      if (startTime) {
+        const elapsed = (Date.now() - startTime) / 1000; // seconds
+        const speed = loaded / elapsed; // bytes/sec
+
+        const speedDisplay = document.getElementById("download-speed-display");
+        if (speed > 1048576) { // More than 1MB/s
+          speedDisplay.textContent = `Speed: ${(speed / 1048576).toFixed(2)} MB/s`;
+        } else {
+          speedDisplay.textContent = `Speed: ${(speed / 1024).toFixed(1)} KB/s`;
+        }
+
+        // Calculate ETA
+        const etaDisplay = document.getElementById("download-eta-display");
+        if (total && speed > 0) {
+          const eta = (total - loaded) / speed;
+          if (eta > 60) {
+            const m = Math.floor(eta / 60), s = Math.floor(eta % 60);
+            etaDisplay.textContent = `ETA: ${m}m ${s}s`;
+          } else {
+            etaDisplay.textContent = `ETA: ${eta.toFixed(0)}s`;
+          }
+        } else {
+          etaDisplay.textContent = "ETA: Calculating...";
+        }
+      }
+
+      // Update browser title
+      document.title = `Downloading: ${pct}% - Infinity Share`;
+    }
+
+    // Throttled progress update function for smoother performance
+    let lastProgressUpdate = 0;
+    const PROGRESS_UPDATE_INTERVAL = 50; // Update every 50ms for smooth animation
+
+    function throttledProgressUpdate(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk = 0) {
+      const now = Date.now();
+      if (now - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
+        updateDownloadProgressRealTime(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk);
+        lastProgressUpdate = now;
+      }
+    }
+
+    // Enhanced function for real-time opening progress updates
+    function updateOpeningProgressRealTime(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk = 0) {
+      const progress = total > 0 ? (loaded / total) * 100 : 0;
+      const pct = progress.toFixed(1);
+
+      // Update progress bar with smooth animation
+      const progressBar = document.getElementById("opening-progress-bar");
+      progressBar.style.width = `${pct}%`;
+      progressBar.style.transition = "width 0.1s ease-out";
+
+      // Update progress text with more detailed info
+      const progressText = document.getElementById("opening-progress-text");
+      if (total) {
+        const loadedMB = (loaded / 1048576).toFixed(2);
+        const totalMB = (total / 1048576).toFixed(2);
+        const loadedKB = (loaded / 1024).toFixed(0);
+        const totalKB = (total / 1024).toFixed(0);
+
+        // Show KB precision for smaller files, MB for larger files
+        if (total < 1048576) { // Less than 1MB
+          progressText.textContent = `${pct}% (${loadedKB} KB of ${totalKB} KB)`;
+        } else {
+          progressText.textContent = `${pct}% (${loadedMB} MB of ${totalMB} MB)`;
+        }
+      } else {
+        progressText.textContent = `${(loaded / 1024).toFixed(0)} KB loaded`;
+      }
+
+      // Update chunk display
+      if (chunkIndex !== undefined && totalChunks !== undefined) {
+        document.getElementById("opening-chunk-display").textContent = `Chunk: ${chunkIndex + 1}/${totalChunks}`;
+      }
+
+      // Calculate and display speed with more precision
+      if (startTime) {
+        const elapsed = (Date.now() - startTime) / 1000; // seconds
+        const speed = loaded / elapsed; // bytes/sec
+
+        const speedDisplay = document.getElementById("opening-speed-display");
+        if (speed > 1048576) { // More than 1MB/s
+          speedDisplay.textContent = `Speed: ${(speed / 1048576).toFixed(2)} MB/s`;
+        } else {
+          speedDisplay.textContent = `Speed: ${(speed / 1024).toFixed(1)} KB/s`;
+        }
+
+        // Calculate ETA
+        const etaDisplay = document.getElementById("opening-eta-display");
+        if (total && speed > 0) {
+          const eta = (total - loaded) / speed;
+          if (eta > 60) {
+            const m = Math.floor(eta / 60), s = Math.floor(eta % 60);
+            etaDisplay.textContent = `ETA: ${m}m ${s}s`;
+          } else {
+            etaDisplay.textContent = `ETA: ${eta.toFixed(0)}s`;
+          }
+        } else {
+          etaDisplay.textContent = "ETA: Calculating...";
+        }
+      }
+
+      // Update browser title
+      document.title = `Opening: ${pct}% - Infinity Share`;
+    }
+
+    // Throttled opening progress update function
+    let lastOpeningProgressUpdate = 0;
+
+    function throttledOpeningProgressUpdate(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk = 0) {
+      const now = Date.now();
+      if (now - lastOpeningProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
+        updateOpeningProgressRealTime(loaded, total, startTime, chunkIndex, totalChunks, bytesThisChunk);
+        lastOpeningProgressUpdate = now;
+      }
+    }
+
+    // Function to open file with progress tracking
+    async function openFileWithProgress(fileId, fileName, ext, meta) {
+      const indicator = document.getElementById("file-opening-indicator");
+      const fileNameEl = document.getElementById("opening-file-name-text");
+
+      console.log("ðŸš€ Starting file opening process for:", fileName);
+
+      // Activate opening indicator immediately and ensure it's visible
+      indicator.classList.add("active");
+      indicator.style.display = "flex"; // Force display
+      indicator.style.zIndex = "9999"; // Ensure it's on top
+      fileNameEl.textContent = fileName;
+
+      // Initialize progress display
+      const startTs = Date.now();
+      updateOpeningProgressRealTime(0, 0, startTs, 0, 0);
+
+      // Add a small delay to ensure the popup is visible before starting the process
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        const { totalChunks, totalSize } = meta;
+        let loaded = 0;
+
+        console.log(`ðŸ“ File details: ${totalChunks} chunks, ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+
+        // Update progress before starting
+        updateOpeningProgressRealTime(0, totalSize, startTs, 0, totalChunks);
+
+        const buffers = [];
+
+        // Download all chunks with progress tracking
+        for (let idx = 0; idx < totalChunks; idx++) {
+          console.log(`ðŸ“¦ Downloading chunk ${idx + 1}/${totalChunks}`);
+
+          // Update progress before starting each chunk
+          updateOpeningProgressRealTime(loaded, totalSize, startTs, idx, totalChunks, 0);
+
+          const buffer = await fetchChunk(fileId, idx);
+          buffers.push(new Uint8Array(buffer));
+
+          loaded += buffer.byteLength;
+
+          // Update progress for each chunk with throttled real-time precision
+          throttledOpeningProgressUpdate(loaded, totalSize, startTs, idx, totalChunks, buffer.byteLength);
+
+          // Add small delay to ensure UI updates are visible and smooth
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        // Final progress update - 100% complete
+        updateOpeningProgressRealTime(totalSize, totalSize, startTs, totalChunks - 1, totalChunks);
+
+        console.log("âœ… All chunks downloaded, creating blob...");
+
+        // Add a delay to show 100% completion before opening
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Create blob and open file
+        const blob = new Blob(buffers, { type: getMimeType(ext) });
+
+        // Handle different file types
+        if (["jpg", "jpeg", "png", "gif"].includes(ext)) {
+          console.log("ðŸ–¼ï¸ Opening image in modal...");
+          openInModal(URL.createObjectURL(blob));
+        }
+        else if (["mp4", "webm", "mov", "avi"].includes(ext)) {
+          console.log("ðŸŽ¥ Opening video in modal...");
+          const blobUrl = URL.createObjectURL(blob);
+          openVideoInModal(blobUrl, fileName);
+        }
+        else if (ext === "pdf") {
+          console.log("ðŸ“„ Opening PDF in new tab...");
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        }
+
+        showNotification(`Opened "${fileName}" successfully!`, "success");
+
+      } catch (err) {
+        console.error("âŒ File opening error:", err);
+        showNotification(`Error opening file: ${err.message}`, "error", 5000);
+      } finally {
+        console.log("ðŸ§¹ Cleaning up opening indicator...");
+        // Reset UI
+        indicator.classList.remove("active");
+        indicator.style.display = "none"; // Hide the indicator
+        document.getElementById("opening-progress-bar").style.width = "0%";
+        document.getElementById("opening-progress-text").textContent = "0% (0 MB of 0 MB)";
+        document.getElementById("opening-speed-display").textContent = "Speed: 0 MB/s";
+        document.getElementById("opening-eta-display").textContent = "ETA: Calculating...";
+        document.getElementById("opening-chunk-display").textContent = "Chunk: 0/0";
+        document.title = "Infinity Share";
+      }
+    }
+
+    async function streamDownload(fileId, fileName) {
+      const indicator = document.getElementById("file-downloading-indicator");
+      const fileNameEl = document.getElementById("download-file-name-text");
+      let heartbeatInterval = null; // Declare heartbeatInterval here
+
+      // Activate download indicator immediately
+      indicator.classList.add("active");
+      fileNameEl.textContent = fileName;
+
+      // Initialize progress display
+      const startTs = Date.now();
+      updateDownloadProgressRealTime(0, 0, startTs, 0, 0);
+
+      try {
+        // 1) Fetch metadata
+        updateDownloadProgressRealTime(0, 0, startTs, 0, 0);
+        const metaRes = await fetch(
+          `${SERVER_URL}/room/${encodeURIComponent(roomName)}/get-file-metadata/${fileId}`
+        );
+        if (!metaRes.ok) throw new Error(`Metadata ${metaRes.status}`);
+        const { totalChunks, totalSize } = await metaRes.json();
+
+        // Update progress with actual file size
+        updateDownloadProgressRealTime(0, totalSize, startTs, 0, totalChunks);
+
+        // 2) Prepare writer
+        let fsStream = null, writer = null;
+
+        if (supportsFileSystem()) {
+          // File System Access API
+          updateDownloadProgressRealTime(0, totalSize, startTs, 0, totalChunks);
+          const handle = await window.showSaveFilePicker({ suggestedName: fileName });
+          fsStream = await handle.createWritable();
+        }
+        else if (window.streamSaver) {
+          // Streamsaver fallback
+          fsStream = streamSaver.createWriteStream(fileName, { size: totalSize });
+          writer = fsStream.getWriter();
+        }
+        // else: final blob fallback will collect chunks
+
+        // 3) Download chunks one by one with real-time progress
+        let loaded = 0;
+        window._fallbackChunks = [];
+
+        // Pusher-based heartbeat
+        heartbeatInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`${SERVER_URL}/ping`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+              console.log('Heartbeat sent successfully');
+            }
+          } catch (error) {
+            console.warn('Heartbeat failed:', error);
+          }
+        }, 30000); // 30 second intervals
+
+        for (let idx = 0; idx < totalChunks; idx++) {
+          // Update progress before starting each chunk
+          updateDownloadProgressRealTime(loaded, totalSize, startTs, idx, totalChunks, 0);
+
+          const chunkRes = await fetch(
+            `${SERVER_URL}/room/${encodeURIComponent(roomName)}/get-file-chunk/${fileId}?index=${idx}`
+          );
+          if (!chunkRes.ok) throw new Error(`Chunk ${idx} ${chunkRes.status}`);
+          const buffer = await chunkRes.arrayBuffer();
+
+          if (fsStream && supportsFileSystem()) {
+            // Native FS API write
+            await fsStream.write(buffer);
+          }
+          else if (writer) {
+            // Streamsaver write
+            await writer.write(new Uint8Array(buffer));
+          }
+          else {
+            // Blob fallback
+            window._fallbackChunks.push(buffer);
+          }
+
+          loaded += buffer.byteLength;
+
+          // Update progress for each chunk with throttled real-time precision
+          throttledProgressUpdate(loaded, totalSize, startTs, idx, totalChunks, buffer.byteLength);
+
+          // Add small delay to ensure UI updates are visible and smooth
+          await new Promise(resolve => setTimeout(resolve, 5));
+        }
+
+        // 4) Close writer/stream
+        if (fsStream && supportsFileSystem()) {
+          await fsStream.close();
+        }
+        else if (writer) {
+          await writer.close();
+        }
+        else {
+          // Blob fallback
+          const blob = new Blob(window._fallbackChunks);
+          delete window._fallbackChunks;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+
+        // Final progress update - 100% complete
+        updateDownloadProgressRealTime(totalSize, totalSize, startTs, totalChunks - 1, totalChunks);
+
+        showNotification(`Downloaded "${fileName}" successfully!`, "success");
+      }
+      catch (err) {
+        console.error("Download error:", err);
+        showNotification(`Error downloading file: ${err.message}`, "error", 5000);
+      }
+      finally {
+        // Clear heartbeat interval
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+        }
+
+        // Reset UI
+        indicator.classList.remove("active");
+        document.getElementById("download-progress-bar").style.width = "0%";
+        document.getElementById("download-progress-text").textContent = "0% (0 MB of 0 MB)";
+        document.getElementById("download-speed-display").textContent = "Speed: 0 MB/s";
+        document.getElementById("download-eta-display").textContent = "ETA: Calculating...";
+        document.getElementById("download-chunk-display").textContent = "Chunk: 0/0";
+        document.title = "Infinity Share";
+      }
+    }
+
+    // Duplicate Pusher setup section removed
+    async function fetchMetadata(fileId) {
+      const metaRes = await fetch(`${SERVER_URL}/room/${encodeURIComponent(roomName)}/get-file-metadata/${fileId}`);
+      if (!metaRes.ok) throw new Error("Failed to load file metadata");
+      return await metaRes.json(); // { totalChunks, totalSize, fileName, mimeType }
+    }
+    async function fetchChunk(fileId, index) {
+      const res = await fetch(
+        `${SERVER_URL}/room/${encodeURIComponent(roomName)}/get-file-chunk/${fileId}?index=${index}`
+      );
+      if (!res.ok) throw new Error(`Chunk ${index} error`);
+      return await res.arrayBuffer();
+    }
+    let currentDownloadStart = 0;
+    async function handleFileAction(fileId, fileName, ext, action) {
+      const downloadIndicator = document.getElementById("file-downloading-indicator");
+      const openingIndicator = document.getElementById("file-opening-indicator");
+
+      try {
+        const meta = await fetchMetadata(fileId);
+        currentDownloadStart = Date.now();
+
+        if (action === "download") {
+          // Activate download indicator for download action
+          downloadIndicator.classList.add("active");
+          return await streamDownload(fileId, fileName);
+        }
+        else if (action === "open") {
+          // Use opening progress popup for all file types
+          if (["jpg", "jpeg", "png", "gif", "mp4", "webm", "mov", "avi"].includes(ext) || ext === "pdf") {
+            // Use the new opening progress function for all previewable files
+            await openFileWithProgress(fileId, fileName, ext, meta);
+          }
+          else {
+            if (confirm("Cannot preview this file. Download instead?")) {
+              // Activate download indicator for fallback download
+              downloadIndicator.classList.add("active");
+              await streamDownload(fileId, fileName);
+            }
+          }
+        }
+
+      } catch (err) {
+        console.error("File action error:", err);
+        showNotification(err.message, "error", 5000);
+      } finally {
+        // Note: The streamDownload and openFileWithProgress functions handle their own cleanup
+        // Only reset download indicator if no download is in progress
+        if (!downloadIndicator.classList.contains("active")) {
+          document.getElementById("download-progress-bar").style.width = "0%";
+          document.getElementById("download-progress-text").textContent = "0% (0/0)";
+          document.getElementById("download-speed-display").textContent = "Speed: 0 MB/s";
+          document.getElementById("download-chunk-display").textContent = "Chunk: 0/0";
+          document.title = "Infinity Share";
+        }
+      }
+    }
+
+
+
+    // Enhanced progress tracking variables
+    let currentUploadProgress = {
+      fileId: null,
+      fileName: '',
+      startTime: null,
+      lastUpdate: Date.now(),
+      speedSamples: [],
+      chunkProgress: new Map()
+    };
+
+    let currentDownloadProgress = {
+      fileId: null,
+      fileName: '',
+      startTime: null,
+      lastUpdate: Date.now(),
+      speedSamples: [],
+      chunkProgress: new Map()
+    };
+
+    // Legacy upload progress function - used only for direct file uploads (not chunked)
+    function updateUploadProgress(data) {
+      console.log("[Legacy] Update upload progress:", data);
+      if (!data) return;
+
+      // This function should only be called for non-chunked uploads
+      // Chunked uploads handle their own progress tracking
+      const progressBar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-text");
+      const speedDisplay = document.getElementById("speed-display");
+      const etaDisplay = document.getElementById("eta-display");
+      const chunkDisplay = document.getElementById("chunk-display");
+
+      // Update basic progress with safety checks
+      const progress = data.progress || 0;
+      const uploadedMB = data.uploadedMB || 0;
+      const totalSizeMB = data.totalSizeMB || 0;
+      const uploadedChunks = data.uploadedChunks || 0;
+      const totalChunks = data.totalChunks || 0;
+
+      progressBar.style.width = `${Math.min(100, progress)}%`;
+      progressText.textContent = `${progress.toFixed(1)}% (${uploadedMB} MB of ${totalSizeMB} MB)`;
+
+      // Update chunks
+      chunkDisplay.textContent = `Chunks: ${uploadedChunks}/${totalChunks}`;
+
+      // Calculate and display speed
+      const now = Date.now();
+      if (data.speed && data.speed > 0) {
+        const speedMBs = (data.speed / (1024 * 1024)).toFixed(2);
+        speedDisplay.textContent = `Speed: ${speedMBs} MB/s`;
+
+        // Calculate ETA
+        const eta = data.estimatedTimeRemaining || data.eta;
+        if (eta && eta > 0) {
+          const etaMinutes = Math.floor(eta / 60);
+          const etaSeconds = Math.floor(eta % 60);
+          etaDisplay.textContent = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+        } else {
+          etaDisplay.textContent = "ETA: Calculating...";
+        }
+      } else {
+        speedDisplay.textContent = "Speed: Calculating...";
+        etaDisplay.textContent = "ETA: Calculating...";
+      }
+
+      // Update browser title with progress
+      document.title = `Uploading: ${progress.toFixed(1)}% - Infinity Share`;
+
+      // Store progress info
+      currentUploadProgress.fileId = data.fileId;
+      currentUploadProgress.fileName = data.fileName;
+      currentUploadProgress.lastUpdate = now;
+    }
+
+    function updateRealTimeProgress(data) {
+      // Real-time updates for individual chunks
+      if (data.chunkIndex !== undefined) {
+        const chunkKey = `chunk_${data.chunkIndex}`;
+        currentUploadProgress.chunkProgress.set(data.chunkIndex, data.chunkProgress || 0);
+
+        // Show mini notification for chunk progress
+        if (data.chunkProgress >= 100) {
+          showMiniNotification(`Chunk ${data.chunkIndex + 1} complete`, "success");
+        }
+      }
+    }
+    function updateByteProgress(data) {
+      const progressBar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-text");
+      const speedDisplay = document.getElementById("speed-display");
+      const etaDisplay = document.getElementById("eta-display");
+      const chunkDisplay = document.getElementById("chunk-display");
+
+      const progress = data.totalProgress || 0;
+      const uploadedMB = (data.uploadedBytes / (1024 * 1024)).toFixed(2);
+      const speedMBs = data.speed ? (data.speed / 1024).toFixed(2) : '0.00';
+      const etaSec = data.eta || 0;
+
+      progressBar.style.width = `${progress.toFixed(1)}%`;
+      progressText.textContent = `${progress.toFixed(1)}% (${uploadedMB} MB)`;
+
+      speedDisplay.textContent = `Speed: ${speedMBs} KB/s`;
+
+      if (etaSec > 0) {
+        const etaMinutes = Math.floor(etaSec / 60);
+        const etaSeconds = Math.floor(etaSec % 60);
+        etaDisplay.textContent = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+      } else {
+        etaDisplay.textContent = "ETA: Calculating...";
+      }
+
+      chunkDisplay.textContent = `Chunk: ${data.chunkIndex + 1}`;
+      document.title = `Uploading: ${progress.toFixed(1)}% - Infinity Share`;
+    }
+
+    function updateDownloadProgress(data) {
+      const progressBar = document.getElementById("download-progress-bar");
+      const progressText = document.getElementById("download-progress-text");
+      const speedDisplay = document.getElementById("download-speed-display");
+      const etaDisplay = document.getElementById("download-eta-display");
+      const chunkDisplay = document.getElementById("download-chunk-display");
+
+      progressBar.style.width = `${Math.min(100, data.progress)}%`;
+      progressText.textContent = `${data.progress.toFixed(1)}% (${data.downloadedMB} MB of ${data.totalMB} MB)`;
+
+      if (data.chunkIndex !== undefined) {
+        chunkDisplay.textContent = `Chunk: ${data.chunkIndex + 1}`;
+      }
+
+      // Calculate speed if available
+      if (data.speed && data.speed > 0) {
+        const speedMBs = (data.speed / (1024 * 1024)).toFixed(2);
+        speedDisplay.textContent = `Speed: ${speedMBs} MB/s`;
+      }
+
+      // Update browser title
+      document.title = `Downloading: ${data.progress.toFixed(1)}% - Infinity Share`;
+    }
+
+    function resetProgressIndicators() {
+      document.getElementById("progress-bar").style.width = "0%";
+      document.getElementById("progress-text").textContent = "0% (0 MB of 0 MB)";
+      document.getElementById("speed-display").textContent = "Speed: 0 MB/s";
+      document.getElementById("eta-display").textContent = "ETA: Calculating...";
+      document.getElementById("chunk-display").textContent = "Chunks: 0/0";
+
+      document.getElementById("download-progress-bar").style.width = "0%";
+      document.getElementById("download-progress-text").textContent = "0% (0 MB of 0 MB)";
+      document.getElementById("download-speed-display").textContent = "Speed: 0 MB/s";
+      document.getElementById("download-eta-display").textContent = "ETA: Calculating...";
+      document.getElementById("download-chunk-display").textContent = "Chunk: 0/0";
+
+      currentUploadProgress = {
+        fileId: null,
+        fileName: '',
+        startTime: null,
+        lastUpdate: Date.now(),
+        speedSamples: [],
+        chunkProgress: new Map()
+      };
+
+      currentDownloadProgress = {
+        fileId: null,
+        fileName: '',
+        startTime: null,
+        lastUpdate: Date.now(),
+        speedSamples: [],
+        chunkProgress: new Map()
+      };
+    }
+
+    // SSE Event Handler Functions - Legacy support for non-chunked uploads
+    function handleFileUploadComplete(data) {
+      console.log('[SSE] Handling file upload complete (legacy):', data);
+
+      // Only handle if not part of active chunked upload
+      const indicator = document.getElementById("file-sending-indicator");
+      const isChunkedUpload = indicator && indicator.classList.contains("active");
+
+      if (!isChunkedUpload) {
+        // Show success notification for legacy uploads
+        showNotification(`File "${data.filename || data.fileName}" uploaded successfully!`, "success", 3000);
+
+        // Refresh content to show new file
+        setTimeout(loadContent, 1000);
+      }
+    }
+
+    function handleFileUploadFailed(data) {
+      console.log('[SSE] Handling file upload failed:', data);
+
+      // Hide upload indicator
+      const indicator = document.getElementById("file-sending-indicator");
+      indicator.classList.remove("active");
+
+      // Reset progress
+      resetProgressIndicators();
+
+      // Show error notification
+      showNotification(`File upload failed: ${data.error || 'Unknown error'}`, "error", 5000);
+    }
+
+    function handleUploadError(data) {
+      console.log('[SSE] Handling upload error:', data);
+
+      // Hide upload indicator
+      const indicator = document.getElementById("file-sending-indicator");
+      indicator.classList.remove("active");
+
+      // Reset progress
+      resetProgressIndicators();
+
+      // Show error notification
+      showNotification(`Upload error: ${data.error || 'Unknown error'}`, "error", 5000);
+    }
+
+    function handleUploadCancelled(data) {
+      console.log('[SSE] Handling upload cancelled:', data);
+
+      // Hide upload indicator
+      const indicator = document.getElementById("file-sending-indicator");
+      indicator.classList.remove("active");
+
+      // Reset progress
+      resetProgressIndicators();
+
+      // Show notification
+      showNotification(`Upload cancelled: ${data.filename || 'File'}`, "warning", 3000);
+    }
+
+    function handleNewContent(data) {
+      console.log('[SSE] Handling new content:', data);
+
+      // Show notification for new content
+      if (data.type === 'message') {
+        showMiniNotification(`New message from ${data.userId}`, "info");
+      } else if (data.type === 'file') {
+        showMiniNotification(`New file uploaded: ${data.filename}`, "info");
+      }
+
+      // Refresh content to show updates
+      loadContent();
+    }
+
+    // Enhanced notification system
+    function showNotification(message, type = "info", duration = 3000) {
+      const notification = document.createElement("div");
+      notification.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg text-white max-w-sm transition-all duration-300 transform translate-x-full`;
+
+      switch (type) {
+        case "success":
+          notification.classList.add("bg-green-600");
+          break;
+        case "error":
+          notification.classList.add("bg-red-600");
+          break;
+        case "warning":
+          notification.classList.add("bg-yellow-600");
+          break;
+        default:
+          notification.classList.add("bg-blue-600");
+      }
+
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <div class="flex-1">${message}</div>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      // Animate in
+      setTimeout(() => {
+        notification.classList.remove("translate-x-full");
+      }, 100);
+
+      // Auto remove
+      setTimeout(() => {
+        notification.classList.add("translate-x-full");
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
+        }, 300);
+      }, duration);
+    }
+
+    function showMiniNotification(message, type = "info") {
+      const mini = document.createElement("div");
+      mini.className = `fixed top-4 left-1/2 transform -translate-x-1/2 z-40 px-3 py-1 rounded-full text-xs text-white transition-all duration-500 opacity-0`;
+
+      switch (type) {
+        case "success":
+          mini.classList.add("bg-green-500");
+          break;
+        case "error":
+          mini.classList.add("bg-red-500");
+          break;
+        default:
+          mini.classList.add("bg-blue-500");
+      }
+
+      mini.textContent = message;
+      document.body.appendChild(mini);
+
+      setTimeout(() => mini.classList.remove("opacity-0"), 100);
+      setTimeout(() => {
+        mini.classList.add("opacity-0");
+        setTimeout(() => mini.remove(), 500);
+      }, 2000);
+    }
+
+
+
+    // DOM element references
+    const chatBox = document.getElementById("chat-box");
+
+    async function loadContent() {
+      try {
+        const response = await fetch(SERVER_URL + `/room/${encodeURIComponent(roomName)}/get-content?limit=50`);
+        if (!response.ok) throw new Error("Failed to load content");
+        const { content } = await response.json();
+        chatBox.innerHTML = "";
+        content.forEach(item => {
+          const container = document.createElement("div");
+          container.className = "chat-message received";
+          if (item.type === "message") {
+            const safeMsg = escapeHtml(item.message)
+              .replace(/\r?\n/g, "<br>")
+              .replace(/ /g, "&nbsp;");
+            container.innerHTML = `<p>${safeMsg}</p><div class="message-date">${new Date(item.created_at).toLocaleString()}</div>`;
+          } else if (item.type === "file") {
+            createFilePreview(item.file_id, item.file_name, item.preview, item.created_at, container, item.file_size, item.is_complete);
+          }
+          chatBox.appendChild(container);
+        });
+        scrollToBottom();
+      } catch (error) {
+        console.error("Error loading content:", error);
+        showNotification("Error loading content", "error");
+      }
+    }
+
+    // Enhanced IndexedDB with better error handling
+    const DB_NAME = "InfinityShareDB_v2";
+    const STORE_NAME = "files";
+    async function initIndexedDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 2);
+        request.onupgradeneeded = event => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            const store = db.createObjectStore(STORE_NAME, { keyPath: "fileId" });
+            store.createIndex("timestamp", "timestamp", { unique: false });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject("Failed to initialize IndexedDB: " + request.error);
+      });
+    }
+
+    async function storeInIndexedDB(fileId, data) {
+      try {
+        const db = await initIndexedDB();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction([STORE_NAME], "readwrite");
+          const store = transaction.objectStore(STORE_NAME);
+          const request = store.put({
+            fileId,
+            data,
+            timestamp: Date.now(),
+            size: data.length
+          });
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject("Failed to store in IndexedDB: " + request.error);
+        });
+      } catch (error) {
+        console.warn("IndexedDB storage failed:", error);
+      }
+    }
+
+    async function retrieveFromIndexedDB(fileId) {
+      try {
+        const db = await initIndexedDB();
+        return new Promise((resolve, reject) => {
+          const transaction = db.transaction([STORE_NAME], "readonly");
+          const store = transaction.objectStore(STORE_NAME);
+          const request = store.get(fileId);
+          request.onsuccess = () => resolve(request.result?.data || null);
+          request.onerror = () => reject("Failed to retrieve from IndexedDB: " + request.error);
+        });
+      } catch (error) {
+        console.warn("IndexedDB retrieval failed:", error);
+        return null;
+      }
+    }
+
+    function getLocalStorageUsage() {
+      let total = 0;
+      for (const key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+          total += (localStorage[key].length + key.length) * 2;
+        }
+      }
+      return total / (1024 * 1024);
+    }
+
+    // Enhanced file retrieval with streaming support
+    async function retrieveFullFile(fileId, fileName, onProgress) {
+      const storageKey = `file_${fileId}`;
+
+      // Check localStorage first
+      let cached = localStorage.getItem(storageKey);
+      if (cached) {
+        console.log("Retrieved from localStorage");
+        return cached;
+      }
+
+      // Check IndexedDB
+      cached = await retrieveFromIndexedDB(fileId);
+      if (cached) {
+        console.log("Retrieved from IndexedDB");
+        return cached;
+      }
+
+      try {
+        // Get file metadata
+        const metaRes = await fetch(SERVER_URL + `/room/${encodeURIComponent(roomName)}/get-file-metadata/${fileId}`);
+        if (!metaRes.ok) {
+          const err = await metaRes.json();
+          throw new Error(err.error || "Failed to fetch metadata");
+        }
+        const { totalChunks, totalSize, fileName: metaFileName } = await metaRes.json();
+
+        console.log(`Downloading ${metaFileName}: ${totalChunks} chunks, ${(totalSize / (1024 * 1024)).toFixed(2)}MB`);
+
+        const chunks = new Array(totalChunks).fill(null);
+        let fetchedBytes = 0;
+        const startTime = Date.now();
+
+        // Enhanced chunk fetching with retry logic
+        const fetchChunk = async (index, retries = 3) => {
+          for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+              const res = await fetch(
+                SERVER_URL + `/room/${encodeURIComponent(roomName)}/get-file-chunk/${fileId}?index=${index}`,
+                { signal: controller.signal }
+              );
+
+              clearTimeout(timeoutId);
+
+              if (!res.ok) throw new Error(`Failed to fetch chunk ${index}: ${res.status}`);
+
+              const buffer = await res.arrayBuffer();
+              fetchedBytes += buffer.byteLength;
+
+              // Enhanced progress reporting
+              const progress = (fetchedBytes / totalSize) * 100;
+              const elapsed = (Date.now() - startTime) / 1000;
+              const speed = elapsed > 0 ? fetchedBytes / elapsed : 0;
+
+              if (onProgress) {
+                onProgress(fetchedBytes, totalSize, {
+                  chunkIndex: index,
+                  totalChunks,
+                  progress,
+                  speed,
+                  eta: speed > 0 ? (totalSize - fetchedBytes) / speed : null
+                });
+              }
+
+              return { index, buffer };
+            } catch (err) {
+              console.warn(`Chunk ${index} attempt ${attempt} failed:`, err.message);
+              if (attempt === retries) throw err;
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            }
+          }
+        };
+
+        // Download chunks with enhanced concurrency
+        const results = [];
+        for (let i = 0; i < totalChunks; i += CHUNK_CONCURRENCY) {
+          const chunkGroup = Array.from({ length: Math.min(CHUNK_CONCURRENCY, totalChunks - i) }, (_, idx) => i + idx);
+          const groupResults = await Promise.all(chunkGroup.map(index => fetchChunk(index)));
+          results.push(...groupResults);
+
+          // Small delay between batches to avoid overwhelming the server
+          if (i + CHUNK_CONCURRENCY < totalChunks) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        }
+
+        // Combine chunks in order
+        results.forEach(({ index, buffer }) => {
+          chunks[index] = new Uint8Array(buffer);
+        });
+
+        const totalLength = chunks.reduce((sum, chunk) => sum + (chunk ? chunk.length : 0), 0);
+        const combined = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          if (!chunk) throw new Error("Missing chunk detected");
+          combined.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        const base64Str = uint8ToBase64(combined);
+
+        // Enhanced caching strategy
+        try {
+          const fileSizeMB = totalLength / (1024 * 1024);
+          const currentLSMB = getLocalStorageUsage();
+
+          if (fileSizeMB < 2 && (currentLSMB + fileSizeMB) < 5) {
+            localStorage.setItem(storageKey, base64Str);
+            console.log("Cached in localStorage");
+          } else if (fileSizeMB < 100) {
+            await storeInIndexedDB(fileId, base64Str);
+            console.log("Cached in IndexedDB");
+          }
+        } catch (cacheError) {
+          console.warn("Failed to cache file:", cacheError.message);
+        }
+
+        return base64Str;
+      } catch (err) {
+        throw new Error(`Failed to retrieve file: ${err.message}`);
+      }
+    }
+
+    function uint8ToBase64(u8Arr) {
+      const CHUNK_SIZE = 0x8000;
+      let index = 0, result = "";
+      while (index < u8Arr.length) {
+        const slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, u8Arr.length));
+        result += String.fromCharCode.apply(null, slice);
+        index += CHUNK_SIZE;
+      }
+      return btoa(result);
+    }
+
+    function base64ToBlob(base64, mime) {
+      const byteStr = atob(base64);
+      const buf = new ArrayBuffer(byteStr.length);
+      const u8Arr = new Uint8Array(buf);
+      for (let i = 0; i < byteStr.length; i++) {
+        u8Arr[i] = byteStr.charCodeAt(i);
+      }
+      return new Blob([buf], { type: mime });
+    }
+
+    function constructDataUrl(base64Str, mime) {
+      return `data:${mime};base64,${base64Str}`;
+    }
+
+    function getMimeType(ext) {
+      const lookup = {
+        jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif",
+        mp4: "video/mp4", avi: "video/avi", mov: "video/quicktime", webm: "video/webm",
+        pdf: "application/pdf", txt: "text/plain", doc: "application/msword",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        zip: "application/zip", rar: "application/x-rar-compressed"
+      };
+      return lookup[ext.toLowerCase()] || "application/octet-stream";
+    }
+
+    function loadStoredRoomInfo() {
+      const roomStored = localStorage.getItem("roomName");
+      const forumImg = localStorage.getItem("forumImage");
+      if (roomStored) {
+        document.getElementById("dynamic-room-name").textContent = roomStored;
+      } else {
+        window.location.href = "/";
+      }
+      if (forumImg) {
+        document.getElementById("forumAvatar").src = `data:image/png;base64,${forumImg}`;
+      }
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe.replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function scrollToBottom() {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Enhanced file preview with progress indicators
+    async function createFilePreview(fileId, fileName, previewBase64, timestamp, container, fileSize = 0, isComplete = true) {
+      const previewEl = document.createElement("div");
+      previewEl.className = "file-preview bg-gray-800 p-4 rounded-lg shadow-md transition transform hover:translate-y-[-2px] hover:shadow-xl mb-4";
+
+      const nameEl = document.createElement("div");
+      nameEl.textContent = fileName;
+      nameEl.className = "font-bold text-lg text-white mb-2";
+      previewEl.appendChild(nameEl);
+
+      // File size and status indicator
+      if (fileSize > 0) {
+        const sizeEl = document.createElement("div");
+        sizeEl.className = "text-sm text-gray-400 mb-2";
+        const sizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+        const statusText = isComplete ? "âœ“ Complete" : "âš  Incomplete";
+        const statusClass = isComplete ? "text-green-400" : "text-yellow-400";
+        sizeEl.innerHTML = `${sizeMB} MB â€¢ <span class="${statusClass}">${statusText}</span>`;
+        previewEl.appendChild(sizeEl);
+      }
+
+      const dateEl = document.createElement("div");
+      dateEl.className = "message-date text-xs text-gray-400";
+      dateEl.textContent = new Date(timestamp).toLocaleString();
+      previewEl.appendChild(dateEl);
+
+      const imgContainer = document.createElement("div");
+      imgContainer.className = "flex justify-center mb-4";
+
+      const ext = fileName.toLowerCase().split(".").pop();
+      if (["jpg", "jpeg", "png", "gif"].includes(ext) && previewBase64) {
+        const imgEl = document.createElement("img");
+        imgEl.src = `data:image/png;base64,${previewBase64}`;
+        imgEl.className = "w-48 max-h-48 sm:w-64 sm:max-h-64 object-contain rounded-md border border-gray-600 shadow-sm image-preview cursor-pointer";
+        imgEl.onclick = () => handleFileAction(fileId, fileName, ext, "open");
+        imgContainer.appendChild(imgEl);
+      } else {
+        const iconContainer = document.createElement("div");
+        iconContainer.className = "text-center";
+        const icon = document.createElement("i");
+
+        // Enhanced file type icons
+        if (["mp4", "avi", "mov", "webm"].includes(ext)) {
+          icon.className = "fas fa-play-circle text-6xl text-red-500";
+        } else if (ext === "pdf") {
+          icon.className = "fas fa-file-pdf text-6xl text-red-600";
+        } else if (["zip", "rar", "7z"].includes(ext)) {
+          icon.className = "fas fa-file-archive text-6xl text-yellow-600";
+        } else if (["doc", "docx"].includes(ext)) {
+          icon.className = "fas fa-file-word text-6xl text-blue-600";
+        } else if (["txt", "log"].includes(ext)) {
+          icon.className = "fas fa-file-alt text-6xl text-gray-500";
+        } else {
+          icon.className = "fas fa-file text-6xl text-gray-500";
+        }
+
+        iconContainer.appendChild(icon);
+        imgContainer.appendChild(iconContainer);
+      }
+      previewEl.appendChild(imgContainer);
+
+      const btnContainer = document.createElement("div");
+      btnContainer.className = "flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3";
+
+      const openBtn = document.createElement("button");
+      openBtn.className = "flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition duration-300 w-full sm:w-auto";
+      openBtn.innerHTML = '<i class="fas fa-eye mr-2"></i> Open';
+      openBtn.onclick = () => handleFileAction(fileId, fileName, ext, "open");
+
+      const downloadBtn = document.createElement("button");
+      downloadBtn.className = "flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition duration-300 w-full sm:w-auto";
+      downloadBtn.innerHTML = '<i class="fas fa-download mr-2"></i> Download';
+      downloadBtn.onclick = () => handleFileAction(fileId, fileName, ext, "download");
+
+      // Disable buttons if file is incomplete
+      if (!isComplete) {
+        openBtn.disabled = true;
+        downloadBtn.disabled = true;
+        openBtn.className += " opacity-50 cursor-not-allowed";
+        downloadBtn.className += " opacity-50 cursor-not-allowed";
+        openBtn.innerHTML = '<i class="fas fa-clock mr-2"></i> Processing...';
+      }
+
+      btnContainer.appendChild(openBtn);
+      btnContainer.appendChild(downloadBtn);
+      previewEl.appendChild(btnContainer);
+      container.appendChild(previewEl);
+    }
+
+    // Enhanced file action handler with better error handling
+    // async function handleFileAction(fileId, fileName, ext, action) {
+    //   const indicator = document.getElementById("file-downloading-indicator");
+    //   const downloadProgressBar = document.getElementById("download-progress-bar");
+    //   const downloadProgressText = document.getElementById("download-progress-text");
+    //   const fileNameTxt = document.getElementById("download-file-name-text");
+    //   const downloadSpeedDisplay = document.getElementById("download-speed-display");
+    //   const downloadEtaDisplay = document.getElementById("download-eta-display");
+    //   const downloadChunkDisplay = document.getElementById("download-chunk-display");
+
+    //   try {
+    //     fileNameTxt.textContent = fileName;
+    //     indicator.classList.add("active");
+    //     currentDownloadProgress.startTime = Date.now();
+
+    //     const base64Str = await retrieveFullFile(fileId, fileName, (fetched, total, details) => {
+    //       const progress = (fetched / total) * 100;
+    //       downloadProgressBar.style.width = `${progress}%`;
+    //       downloadProgressText.textContent = `${progress.toFixed(1)}% (${(fetched / 1048576).toFixed(2)} MB of ${(total / 1048576).toFixed(2)} MB)`;
+
+    //       if (details) {
+    //         if (details.speed > 0) {
+    //           const speedMBs = (details.speed / (1024 * 1024)).toFixed(2);
+    //           downloadSpeedDisplay.textContent = `Speed: ${speedMBs} MB/s`;
+    //         }
+
+    //         if (details.eta && details.eta > 0) {
+    //           const etaMinutes = Math.floor(details.eta / 60);
+    //           const etaSeconds = Math.floor(details.eta % 60);
+    //           downloadEtaDisplay.textContent = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+    //         }
+
+    //         if (details.chunkIndex !== undefined) {
+    //           downloadChunkDisplay.textContent = `Chunk: ${details.chunkIndex + 1}/${details.totalChunks}`;
+    //         }
+    //       }
+
+    //       // Update browser title
+    //       document.title = `Downloading: ${progress.toFixed(1)}% - Infinity Share`;
+    //     });
+
+    //     const mime = getMimeType(ext);
+
+    //     if (action === "open") {
+    //       if (["jpg", "jpeg", "png", "gif"].includes(ext)) {
+    //         openInModal(constructDataUrl(base64Str, mime));
+    //       } else if (["mp4", "avi", "mov", "webm"].includes(ext)) {
+    //         openVideoInModal(constructDataUrl(base64Str, mime), fileName);
+    //       } else if (ext === "pdf") {
+    //         const blob = base64ToBlob(base64Str, mime);
+    //         const blobUrl = URL.createObjectURL(blob);
+    //         const newTab = window.open(blobUrl, "_blank");
+    //         if (!newTab) {
+    //           if (confirm("Pop-ups blocked. Download instead?")) {
+    //             downloadFile(constructDataUrl(base64Str, mime), fileName);
+    //           }
+    //         } else {
+    //           setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    //         }
+    //       } else {
+    //         if (confirm(`Preview not supported for .${ext} files. Download instead?`)) {
+    //           downloadFile(constructDataUrl(base64Str, mime), fileName);
+    //         }
+    //       }
+    //     } else {
+    //       downloadFile(constructDataUrl(base64Str, mime), fileName);
+    //     }
+
+    //     showNotification(`${action === "open" ? "Opened" : "Downloaded"} "${fileName}" successfully!`, "success");
+
+    //   } catch (error) {
+    //     console.error(`Error ${action}ing file:`, error);
+    //     showNotification(`Error ${action === "open" ? "opening" : "downloading"} file: ${error.message}`, "error", 5000);
+    //   } finally {
+    //     indicator.classList.remove("active");
+    //     downloadProgressBar.style.width = "0%";
+    //     downloadProgressText.textContent = "0% (0 MB of 0 MB)";
+    //     downloadSpeedDisplay.textContent = "Speed: 0 MB/s";
+    //     downloadEtaDisplay.textContent = "ETA: Calculating...";
+    //     downloadChunkDisplay.textContent = "Chunk: 0/0";
+    //     document.title = "Infinity Share";
+    //   }
+    // }
+
+    function getMimeType(ext) {
+      const m = {
+        jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif",
+        mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", avi: "video/avi",
+        pdf: "application/pdf", txt: "text/plain", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        zip: "application/zip", rar: "application/x-rar-compressed"
+      };
+      return m[ext.toLowerCase()] || "application/octet-stream";
+    }
+
+    function openInModal(src) {
+      const modal = document.createElement("div");
+      modal.className = "fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50";
+      modal.innerHTML = `
+      <div class="bg-gray-800 p-6 rounded-lg text-center w-full max-w-4xl mx-4">
+        <img src="${src}" class="max-w-full max-h-96 rounded-md mx-auto"/>
+        <div class="mt-4 flex justify-center space-x-4">
+          <button onclick="downloadFile('${src}','image')" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+            <i class="fas fa-download mr-2"></i>Download
+          </button>
+          <button onclick="this.closest('div.fixed').remove()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+            Close
+          </button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+    }
+
+
+
+    function openVideoInModal(videoUrl, fileName) {
+      const videoModal = document.getElementById("videoModal");
+      const player = document.getElementById("videoPlayer");
+      const dlBtn = document.getElementById("downloadVideo");
+
+      player.src = videoUrl;
+      dlBtn.href = videoUrl;
+      dlBtn.download = fileName;
+      videoModal.classList.replace("hidden", "flex");
+    }
+
+    function downloadFile(dataUrl, name) {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function downloadImageFromModal(src) {
+      const link = document.createElement('a');
+      link.href = src;
+      link.download = 'image';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    document.getElementById("closeVideoModal").addEventListener("click", () => {
+      const videoModal = document.getElementById("videoModal");
+      const videoPlayer = document.getElementById("videoPlayer");
+      videoModal.classList.add("hidden");
+      videoModal.classList.remove("flex");
+      videoPlayer.pause();
+      videoPlayer.src = "";
+    });
+
+
+
+    // Enhanced message sending
+    async function sendMessage(message) {
+      const textIndicator = document.getElementById("text-sending-indicator");
+      try {
+        textIndicator.classList.add("active");
+        const response = await fetch(SERVER_URL + `/room/${encodeURIComponent(roomName)}/post-message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to send message");
+        }
+
+        document.getElementById("message-input").value = "";
+        showNotification("Message sent successfully!", "success", 2000);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error("Error sending message:", error);
+        showNotification("Error sending message: " + error.message, "error");
+      } finally {
+        textIndicator.classList.remove("active");
+      }
+    }
+
+    // =============================================================================
+    // CLIENT-SIDE CHUNKING SYSTEM - PROFESSIONAL IMPLEMENTATION
+    // =============================================================================
+
+    // Configuration for client-side chunking
+    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks for optimal performance on Render
+    const MAX_CONCURRENT_CHUNKS = 1;     // Force sequential to send next only after previous started
+    const CHUNK_RETRY_ATTEMPTS = 3;      // Retry failed chunks
+    const CHUNK_TIMEOUT = 30000;         // 30 second timeout per chunk
+
+    // Client-side file chunking class with parallel upload support
+    class ClientFileChunker {
+      constructor(file, chunkSize = CHUNK_SIZE) {
+        this.file = file;
+        this.chunkSize = chunkSize;
+        this.totalChunks = Math.ceil(file.size / chunkSize);
+        this.uploadedChunks = new Set();
+        this.failedChunks = new Set();
+        this.activeUploads = new Map();
+        this.startTime = Date.now();
+        this.uploadedBytes = 0;
+        this.chunksCreated = 0; // Track chunks that have been read from file
+        this.chunksUploaded = 0; // Track chunks that have been uploaded to server
+      }
+
+      // Split file into chunks without loading entire file into memory
+      getChunk(chunkIndex) {
+        const start = chunkIndex * this.chunkSize;
+        const end = Math.min(start + this.chunkSize, this.file.size);
+        return this.file.slice(start, end);
+      }
+
+      // Generate unique file ID for tracking - UUID format for database compatibility
+      generateFileId() {
+        // Generate a proper UUID v4 format for database compatibility
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          const r = Math.random() * 16 | 0;
+          const v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
+      // Calculate upload progress based on actual uploaded bytes
+      getProgress() {
+        const progress = (this.uploadedBytes / this.file.size) * 100;
+        const elapsed = (Date.now() - this.startTime) / 1000;
+        const speed = elapsed > 0 ? this.uploadedBytes / elapsed : 0; // bytes per second
+        const remaining = this.file.size - this.uploadedBytes;
+        const eta = speed > 0 ? remaining / speed : 0;
+
+        return {
+          progress: Math.min(progress, 100),
+          uploadedBytes: this.uploadedBytes,
+          totalBytes: this.file.size,
+          uploadedChunks: this.uploadedChunks.size,
+          totalChunks: this.totalChunks,
+          chunksCreated: this.chunksCreated,
+          speed,
+          eta,
+          elapsed
+        };
+      }
+
+      // Upload a single chunk with retry logic - ENHANCED for parallel upload
+      async uploadChunk(chunkIndex, fileId, onProgress) {
+        const maxRetries = CHUNK_RETRY_ATTEMPTS;
+        let retryCount = 0;
+
+        while (retryCount < maxRetries) {
+          try {
+            // Get chunk from file (incremental read - doesn't load entire file)
+            const chunk = this.getChunk(chunkIndex);
+            this.chunksCreated++;
+
+            const formData = new FormData();
+            formData.append('chunk', chunk);
+            formData.append('fileId', fileId);
+            formData.append('chunkIndex', chunkIndex.toString());
+            formData.append('totalChunks', this.totalChunks.toString());
+            formData.append('fileName', this.file.name);
+            formData.append('fileSize', this.file.size.toString());
+            formData.append('userId', userId);
+            formData.append('roomName', roomName);
+            formData.append('chunkSize', chunk.size.toString()); // Actual chunk size
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CHUNK_TIMEOUT);
+
+            const response = await fetch(`${SERVER_URL}/upload-chunk`, {
+              method: 'POST',
+              body: formData,
+              signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              throw new Error(`Chunk ${chunkIndex} upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            this.uploadedChunks.add(chunkIndex);
+            this.uploadedBytes += chunk.size; // Use actual chunk size
+            this.chunksUploaded++;
+            this.failedChunks.delete(chunkIndex);
+
+            // Update progress with real-time data
+            if (onProgress) {
+              onProgress(this.getProgress());
+            }
+
+            return result;
+
+          } catch (error) {
+            retryCount++;
+            this.failedChunks.add(chunkIndex);
+
+            if (retryCount >= maxRetries) {
+              console.error(`Chunk ${chunkIndex} failed after ${maxRetries} attempts:`, error);
+              throw error;
+            }
+
+            // Exponential backoff
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      // SEQUENTIAL UPLOAD: Send next chunk immediately after previous dispatch
+      // This pipelines chunking and uploading for instant server processing
+      async uploadAllChunksParallel(fileId, onProgress, onComplete, onError) {
+        try {
+          console.log(`[ClientFileChunker] Starting sequential upload for ${this.totalChunks} chunks`);
+          console.log(`[ClientFileChunker] File size: ${(this.file.size / 1024 / 1024).toFixed(2)} MB`);
+          for (let i = 0; i < this.totalChunks; i++) {
+            await this.uploadChunk(i, fileId, onProgress);
+          }
+
+          // Verify all chunks were uploaded
+          if (this.uploadedChunks.size === this.totalChunks) {
+            console.log(`[ClientFileChunker] All ${this.totalChunks} chunks uploaded successfully`);
+            onComplete(fileId);
+          } else {
+            throw new Error(`Upload incomplete: ${this.uploadedChunks.size}/${this.totalChunks} chunks uploaded`);
+          }
+
+        } catch (error) {
+          console.error('[ClientFileChunker] Parallel upload failed:', error);
+          onError(error);
+        }
+      }
+
+      // Legacy method for compatibility
+      async uploadAllChunks(fileId, onProgress, onComplete, onError) {
+        return this.uploadAllChunksParallel(fileId, onProgress, onComplete, onError);
+      }
+    }
+
+    // Semaphore for controlling concurrent uploads
+    class Semaphore {
+      constructor(count) {
+        this.count = count;
+        this.queue = [];
+      }
+
+      async acquire() {
+        return new Promise((resolve) => {
+          if (this.count > 0) {
+            this.count--;
+            resolve(() => this.release());
+          } else {
+            this.queue.push(resolve);
+          }
+        });
+      }
+
+      release() {
+        this.count++;
+        if (this.queue.length > 0) {
+          const resolve = this.queue.shift();
+          this.count--;
+          resolve(() => this.release());
+        }
+      }
+    }
+
+    // Enhanced file upload with client-side chunking
+    async function uploadFile(file) {
+      const indicator = document.getElementById("file-sending-indicator");
+      const progressBar = document.getElementById("progress-bar");
+      const progressText = document.getElementById("progress-text");
+      const fileNameTxt = document.getElementById("file-name-text");
+      const speedDisplay = document.getElementById("speed-display");
+      const etaDisplay = document.getElementById("eta-display");
+      const chunkDisplay = document.getElementById("chunk-display");
+
+      // Enhanced file validation
+      if (!file) {
+        showNotification("No file selected", "error");
+        return;
+      }
+
+      if (file.size === 0) {
+        showNotification("Cannot upload empty files", "error");
+        return;
+      }
+
+      const maxSize = 100 * 1024 * 1024 * 1024; // 100GB
+      if (file.size > maxSize) {
+        showNotification("File too large. Maximum size is 100GB", "error");
+        return;
+      }
+
+      // Check file extension
+      const fileName = file.name;
+      const ext = fileName.toLowerCase().split('.').pop();
+      const dangerousExts = ['exe', 'bat', 'cmd', 'scr', 'pif', 'vbs', 'js'];
+      if (dangerousExts.includes(ext)) {
+        if (!confirm(`Warning: .${ext} files can be dangerous. Continue uploading?`)) {
+          return;
+        }
+      }
+
+      try {
+        // Ensure SSE connection is active before uploading
+        if (!sseRealTimeClient || !sseRealTimeClient.isConnected) {
+          console.warn('[ClientChunk] SSE not connected, attempting to reconnect...');
+          showNotification('Establishing connection...', 'info', 2000);
+
+          if (sseRealTimeClient) {
+            await sseRealTimeClient.reconnect();
+          } else {
+            await initializeSSERealTimeClient();
+          }
+
+          // Wait a bit for connection to stabilize
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          if (!sseRealTimeClient || !sseRealTimeClient.isConnected) {
+            throw new Error('Cannot establish polling connection. Please refresh the page.');
+          }
+        }
+
+        fileNameTxt.textContent = file.name;
+        indicator.classList.add("active");
+
+        // Initialize client-side chunker
+        const chunker = new ClientFileChunker(file);
+        const fileId = chunker.generateFileId();
+
+        console.log(`[ClientChunk] Starting chunked upload: ${file.name} (${file.size} bytes, ${chunker.totalChunks} chunks)`);
+
+        // Show initial file info
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        showNotification(`Starting upload: ${fileName} (${fileSizeMB} MB, ${chunker.totalChunks} chunks)`, "info", 3000);
+
+        // Initialize file on server
+        const initResponse = await fetch(`${SERVER_URL}/init-chunked-upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileId,
+            fileName: file.name,
+            fileSize: file.size,
+            totalChunks: chunker.totalChunks,
+            userId,
+            roomName
+          })
+        });
+
+        if (!initResponse.ok) {
+          throw new Error(`Failed to initialize upload: ${initResponse.status}`);
+        }
+
+        // Set up server byte-progress tracking for real upload progress
+        let uploadInProgress = true;
+        const byteProgressListener = (data) => {
+          if (data.fileId === fileId && data.userId === userId && uploadInProgress) {
+            console.log('[ByteProgress] Server upload progress:', data);
+
+            const progressPercent = data.progress || 0;
+            const uploadedMB = (data.uploadedBytes / (1024 * 1024)).toFixed(2);
+            const totalMB = (file.size / (1024 * 1024)).toFixed(2);
+
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.textContent = `${progressPercent.toFixed(1)}% (${uploadedMB} MB of ${totalMB} MB)`;
+
+            // Show chunk progress - receiving chunks on server
+            if (data.uploadedChunks !== undefined && data.totalChunks !== undefined) {
+              chunkDisplay.textContent = `Server received: ${data.uploadedChunks}/${data.totalChunks} chunks`;
+            }
+
+            // Calculate speed from server data (bytes/sec to MB/s)
+            if (data.speed && data.speed > 0) {
+              const speedMBs = (data.speed / (1024 * 1024)).toFixed(2);
+              speedDisplay.textContent = `Speed: ${speedMBs} MB/s`;
+
+              // Calculate ETA from speed
+              const remainingBytes = file.size - (data.uploadedBytes || 0);
+              const eta = remainingBytes / data.speed; // seconds
+              const etaMinutes = Math.floor(eta / 60);
+              const etaSeconds = Math.floor(eta % 60);
+              etaDisplay.textContent = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+            }
+
+            // Update browser title
+            document.title = `Uploading: ${progressPercent.toFixed(1)}% - Infinity Share`;
+          }
+        };
+
+        // Add server processing progress listener for chunk completion tracking
+        const serverProcessingListener = (data) => {
+          if (data.fileId === fileId && data.userId === userId) {
+            console.log('[ServerProcessing] Server chunk processing:', data);
+
+            const progressPercent = data.progress || 0;
+            const uploadedMB = data.uploadedMB || 0;
+            const totalMB = data.totalSizeMB || (file.size / (1024 * 1024)).toFixed(2);
+
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.textContent = `${progressPercent.toFixed(1)}% (${uploadedMB} MB of ${totalMB} MB) - Server Processing`;
+
+            if (data.uploadedChunks !== undefined && data.totalChunks !== undefined) {
+              chunkDisplay.textContent = `Processing: ${data.uploadedChunks}/${data.totalChunks} chunks`;
+            }
+
+            // Update speed display
+            if (data.speed && data.speed > 0) {
+              const speedMBs = (data.speed / 1024).toFixed(2); // Already in KB/s, convert to MB/s
+              speedDisplay.textContent = `Speed: ${speedMBs} MB/s`;
+            }
+
+            // Update ETA if available
+            if (data.eta && data.eta > 0) {
+              const etaMinutes = Math.floor(data.eta / 60);
+              const etaSeconds = Math.floor(data.eta % 60);
+              etaDisplay.textContent = `ETA: ${etaMinutes}m ${etaSeconds}s`;
+            }
+
+            // Update browser title
+            document.title = `Processing: ${progressPercent.toFixed(1)}% - Infinity Share`;
+          }
+        };
+
+        // Add byte-progress listener for real-time server upload tracking
+        if (sseRealTimeClient) {
+          sseRealTimeClient.on('byte-progress', byteProgressListener);
+          sseRealTimeClient.on('server-processing', serverProcessingListener);
+          sseRealTimeClient.on('chunk-completed', serverProcessingListener);
+        }
+
+        // Client-side progress update function - shows chunks being created and sent
+        const updateProgress = (progress) => {
+          // Show client-side chunk sending progress
+          const clientChunkDisplay = `Client sent: ${progress.uploadedChunks}/${progress.totalChunks} chunks`;
+
+          // Only update if server hasn't started sending progress yet
+          if (!uploadInProgress || progress.uploadedChunks === 0) {
+            chunkDisplay.textContent = clientChunkDisplay;
+          }
+
+          // Calculate client-side speed
+          if (progress.speed > 0) {
+            const speedMBs = (progress.speed / (1024 * 1024)).toFixed(2);
+            console.log(`[ClientProgress] Upload speed: ${speedMBs} MB/s (${progress.uploadedChunks}/${progress.totalChunks} chunks)`);
+          }
+        };
+
+        // Function to hide the indicator and reset UI
+        const hideIndicator = () => {
+          indicator.classList.remove("active");
+          progressBar.style.width = "0%";
+          progressText.textContent = "0% (0 MB of 0 MB)";
+          speedDisplay.textContent = "Speed: 0 MB/s";
+          etaDisplay.textContent = "ETA: Calculating...";
+          chunkDisplay.textContent = "Chunks: 0/0";
+          document.title = "Infinity Share";
+        };
+
+        // Upload completion handler
+        const onComplete = async (fileId) => {
+          console.log(`[ClientChunk] All chunks sent to server: ${fileId}`);
+
+          // Stop tracking client upload progress, but keep indicator active
+          uploadInProgress = false;
+
+          // Update UI to show server processing
+          progressText.textContent = "Processing on server...";
+          chunkDisplay.textContent = `All chunks sent - Server processing`;
+          speedDisplay.textContent = "Speed: Processing...";
+          etaDisplay.textContent = "ETA: Processing...";
+
+          // Set up listener for server completion events
+          let uploadFinished = false;
+          const completionListener = (data) => {
+            console.log(`[ClientChunk] 📡 Received completion event:`, data);
+            console.log(`[ClientChunk] Comparing fileIds: event=${data.fileId}, current=${fileId}`);
+            console.log(`[ClientChunk] Comparing userIds: event=${data.userId}, current=${userId}`);
+
+            // Check if this event is for our file (userId check is flexible)
+            const fileIdMatches = data.fileId === fileId;
+            const userIdMatches = !data.userId || data.userId === userId; // Accept if userId not present or matches
+
+            if (fileIdMatches && userIdMatches) {
+              console.log(`[ClientChunk] ✅ File and User IDs match!`);
+
+              // Accept both 'success' and 'status: completed' as valid completion signals
+              const isComplete = (data.success === true) ||
+                (data.status === 'completed') ||
+                (data.hideIndicator === true);
+
+              console.log(`[ClientChunk] Is complete? ${isComplete} (success=${data.success}, status=${data.status}, hideIndicator=${data.hideIndicator})`);
+
+              if (isComplete && !uploadFinished) {
+                uploadFinished = true;
+                console.log(`[ClientChunk] ✅✅✅ Server processing completed! Hiding indicator for: ${fileId}`);
+
+                // Clean up event listeners
+                if (sseRealTimeClient) {
+                  sseRealTimeClient.off('byte-progress', byteProgressListener);
+                  sseRealTimeClient.off('server-processing', serverProcessingListener);
+                  sseRealTimeClient.off('chunk-completed', serverProcessingListener);
+                  sseRealTimeClient.off('file-upload-complete', completionListener);
+                  sseRealTimeClient.off('upload-finished', completionListener);
+                }
+
+                // Final UI update
+                progressBar.style.width = "100%";
+                progressText.textContent = "100% - Upload completed!";
+                chunkDisplay.textContent = `Complete: ${chunker.totalChunks}/${chunker.totalChunks} chunks`;
+                speedDisplay.textContent = "Speed: Complete";
+                etaDisplay.textContent = "ETA: Complete";
+
+                // Show success and hide indicator after a short delay
+                setTimeout(() => {
+                  showNotification(`"${file.name}" uploaded successfully!`, "success");
+                  setTimeout(loadContent, 1000);
+                  hideIndicator();
+                }, 1000);
+              } else {
+                console.log(`[ClientChunk] ⚠️ Event received but not triggering completion (isComplete=${isComplete}, uploadFinished=${uploadFinished})`);
+              }
+            } else {
+              console.log(`[ClientChunk] ⚠️ Event not for this upload (fileIdMatches=${fileIdMatches}, userIdMatches=${userIdMatches})`);
+            }
+          };
+
+          // Add the completion listener
+          if (sseRealTimeClient) {
+            console.log(`[ClientChunk] 🔧 Setting up completion listeners for fileId: ${fileId}, userId: ${userId}`);
+            sseRealTimeClient.on('file-upload-complete', completionListener);
+            sseRealTimeClient.on('upload-finished', completionListener);
+          } else {
+            console.warn(`[ClientChunk] ⚠️ SSE client not available! Events will not be received.`);
+          }
+
+          // Finalize upload on server
+          try {
+            const finalizeResponse = await fetch(`${SERVER_URL}/finalize-chunked-upload`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fileId, userId, roomName })
+            });
+
+            if (!finalizeResponse.ok) {
+              throw new Error(`Failed to finalize upload: ${finalizeResponse.status}`);
+            }
+
+            // Extended timeout for large files - wait up to 5 minutes for server processing
+            // The indicator will only hide when server sends the completion event
+            setTimeout(() => {
+              if (!uploadFinished) {
+                console.log(`[ClientChunk] No completion event received within 5 minutes, assuming success`);
+
+                // Clean up event listeners on timeout
+                if (sseRealTimeClient) {
+                  sseRealTimeClient.off('byte-progress', byteProgressListener);
+                  sseRealTimeClient.off('server-processing', serverProcessingListener);
+                  sseRealTimeClient.off('chunk-completed', serverProcessingListener);
+                  sseRealTimeClient.off('file-upload-complete', completionListener);
+                  sseRealTimeClient.off('upload-finished', completionListener);
+                }
+
+                showNotification(`"${file.name}" processing taking longer than expected, check back later`, "warning");
+                setTimeout(loadContent, 1000);
+                hideIndicator();
+              }
+            }, 300000); // 5 minutes timeout for large files
+
+          } catch (error) {
+            console.error('[ClientChunk] Finalization error:', error);
+
+            // Clean up event listeners on error
+            if (sseRealTimeClient) {
+              sseRealTimeClient.off('byte-progress', byteProgressListener);
+              sseRealTimeClient.off('server-processing', serverProcessingListener);
+              sseRealTimeClient.off('chunk-completed', serverProcessingListener);
+              sseRealTimeClient.off('file-upload-complete', completionListener);
+              sseRealTimeClient.off('upload-finished', completionListener);
+            }
+
+            showNotification(`Upload finalization failed: ${error.message}`, "error", 5000);
+            hideIndicator();
+          }
+        };
+
+        // Error handler
+        const onError = (error) => {
+          console.error('[ClientChunk] Upload failed:', error);
+          uploadInProgress = false; // Stop tracking byte progress
+
+          // Clean up event listeners on error
+          if (sseRealTimeClient) {
+            sseRealTimeClient.off('byte-progress', byteProgressListener);
+            sseRealTimeClient.off('server-processing', serverProcessingListener);
+            sseRealTimeClient.off('chunk-completed', serverProcessingListener);
+            sseRealTimeClient.off('file-upload-complete', completionListener);
+            sseRealTimeClient.off('upload-finished', completionListener);
+          }
+
+          showNotification(`Upload failed: ${error.message}`, "error", 5000);
+          hideIndicator();
+        };
+
+        // Start chunked upload
+        await chunker.uploadAllChunks(fileId, updateProgress, onComplete, onError);
+
+      } catch (error) {
+        console.error("Upload error:", error);
+        uploadInProgress = false; // Stop tracking byte progress
+        showNotification(`Upload failed: ${error.message}`, "error", 5000);
+        hideIndicator();
+      }
+    }
+
+    // Enhanced event listeners
+    document.getElementById("send-message").addEventListener("click", () => {
+      const msgInput = document.getElementById("message-input");
+      const msg = msgInput.value.trim();
+      if (msg) sendMessage(msg);
+    });
+
+    document.getElementById("message-input").addEventListener("keypress", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const msg = e.target.value.trim();
+        if (msg) sendMessage(msg);
+      }
+    });
+
+    document.getElementById("attach-file").addEventListener("click", () => {
+      document.getElementById("file-input").click();
+    });
+
+    document.getElementById("file-input").addEventListener("change", (ev) => {
+      const f = ev.target.files[0];
+      if (f) uploadFile(f);
+      ev.target.value = "";
+    });
+
+    // SSE connection event listeners
+    document.getElementById("account-status").addEventListener("click", () => {
+      showAccountStatus();
+    });
+
+    document.getElementById("refresh-accounts").addEventListener("click", async () => {
+      if (sseRealTimeClient) {
+        showNotification("Refreshing SSE connection...", "info", 2000);
+        await sseRealTimeClient.reconnect();
+        showNotification("SSE connection refreshed successfully", "success", 2000);
+        showAccountStatus();
+      } else {
+        showNotification("SSE client not initialized", "error");
+      }
+    });
+
+    document.getElementById("switch-account").addEventListener("click", () => {
+      if (sseRealTimeClient) {
+        sseRealTimeClient.reconnect();
+        showNotification("Reconnecting SSE...", "info", 2000);
+      } else {
+        showNotification("SSE client not available", "warning", 2000);
+      }
+    });
+
+    document.getElementById("account-stats").addEventListener("click", () => {
+      if (sseRealTimeClient) {
+        const stats = sseRealTimeClient.getStats();
+        console.log('SSE Connection Stats:', stats);
+        showNotification(`SSE: ${sseRealTimeClient.connected ? 'Connected' : 'Disconnected'}`, "info", 3000);
+      } else {
+        showNotification("SSE client not available", "warning", 2000);
+      }
+    });
+
+    // Drag and drop support
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      document.body.style.backgroundColor = '#2d3748';
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      if (e.clientX === 0 && e.clientY === 0) {
+        document.body.style.backgroundColor = '#1a202c';
+      }
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      document.body.style.backgroundColor = '#1a202c';
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    document.getElementById("back-button").addEventListener("click", () => {
+      window.location.href = "/";
+    });
+
+    document.getElementById("logout-button").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "/";
+    });
+
+    document.getElementById("options-button").addEventListener("click", () => {
+      document.getElementById("options-menu").classList.toggle("hidden");
+    });
+
+    document.getElementById("toggle-search").addEventListener("click", () => {
+      const searchBar = document.getElementById("search-bar");
+      const isVisible = searchBar.style.transform === "translateY(0px)";
+      searchBar.style.transform = isVisible ? "translateY(-100%)" : "translateY(0px)";
+      if (!isVisible) {
+        document.getElementById("search-input").focus();
+      }
+    });
+
+    document.getElementById("close-search").addEventListener("click", () => {
+      document.getElementById("search-bar").style.transform = "translateY(-100%)";
+      document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
+      document.getElementById("search-input").value = "";
+    });
+
+    document.getElementById("search-input").addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const term = this.value.trim().toLowerCase();
+        if (term) searchMessages(term);
+      }
+    });
+
+    document.getElementById("search-button").addEventListener("click", function () {
+      const term = document.getElementById("search-input").value.trim().toLowerCase();
+      if (term) searchMessages(term);
+    });
+
+    function searchMessages(term) {
+      const messages = document.querySelectorAll(".chat-message");
+      let found = 0;
+
+      messages.forEach(msg => {
+        msg.classList.remove("highlighted");
+        if (msg.innerText.toLowerCase().includes(term)) {
+          msg.classList.add("highlighted");
+          found++;
+
+          if (found === 1) {
+            msg.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      });
+
+      if (found === 0) {
+        showNotification("No matches found", "warning", 2000);
+      } else {
+        showNotification(`Found ${found} match${found > 1 ? 'es' : ''}`, "success", 2000);
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'f':
+            e.preventDefault();
+            document.getElementById("toggle-search").click();
+            break;
+          case 'u':
+            e.preventDefault();
+            document.getElementById("attach-file").click();
+            break;
+        }
+      }
+
+      if (e.key === 'Escape') {
+        // Close any open modals or search
+        document.getElementById("close-search").click();
+        document.getElementById("closeVideoModal").click();
+        document.querySelectorAll('.fixed').forEach(modal => {
+          if (modal.id !== 'file-sending-indicator' &&
+            modal.id !== 'file-downloading-indicator' &&
+            modal.id !== 'file-opening-indicator' &&
+            modal.id !== 'text-sending-indicator') {
+            modal.remove();
+          }
+        });
+      }
+    });
+
+    // Initialize room info and load content
+    loadStoredRoomInfo();
+    loadContent();
+
+    // Auto-refresh content every 30 seconds
+    setInterval(() => {
+      if (!document.getElementById("file-sending-indicator").classList.contains("active") &&
+        !document.getElementById("file-downloading-indicator").classList.contains("active") &&
+        !document.getElementById("file-opening-indicator").classList.contains("active")) {
+        loadContent();
+      }
+    }, 30000);
+
+    // Enhanced online/offline status for cloud deployment
+    window.addEventListener('online', () => {
+      console.log('[Network] 🌐 Online event detected');
+      showNotification("Connection restored", "success", 2000);
+
+      // Attempt to reconnect SSE after network restoration
+      if (sseRealTimeClient && !sseRealTimeClient.isConnected) {
+        setTimeout(() => {
+          console.log('[Network] 🔄 Attempting SSE reconnection after network restoration');
+          sseRealTimeClient.connectionAttempts = 0; // Reset attempts
+          sseRealTimeClient.reconnectDelay = 1000; // Reset delay
+          sseRealTimeClient.reconnect();
+        }, 2000); // Give network time to stabilize
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('[Network] 📡 Offline event detected');
+      showNotification("Connection lost - switching to offline mode", "warning", 3000);
+
+      // Stop SSE connections when offline
+      if (sseRealTimeClient && sseRealTimeClient.eventSource) {
+        console.log('[Network] 🛑 Closing SSE connection due to offline status');
+        sseRealTimeClient.eventSource.close();
+        sseRealTimeClient.isConnected = false;
+      }
+    });
+
+    // Leave room when page is unloaded
+    window.addEventListener('beforeunload', async () => {
+      try {
+        await fetch(`${SERVER_URL}/leave-room`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomName, userId })
+        });
+      } catch (error) {
+        console.warn('Failed to leave room:', error);
+      }
+    });
+
+    // Performance monitoring
+    if ('performance' in window) {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const perf = performance.getEntriesByType('navigation')[0];
+          if (perf && perf.loadEventEnd - perf.loadEventStart > 3000) {
+            console.warn('Slow page load detected:', perf.loadEventEnd - perf.loadEventStart + 'ms');
+          }
+        }, 0);
+      });
+    }
+
+    console.log("SSE-Enhanced Infinity Share client initialized");
+    console.log("Features: Real-time progress via Server-Sent Events, streaming uploads/downloads, enhanced caching, drag & drop");
+    console.log("Keyboard shortcuts: Ctrl+F (search), Ctrl+U (upload), Ctrl+A (SSE status), Ctrl+R (refresh connection), Ctrl+S (connection stats), Esc (close modals)");
+    console.log("SSE System: Server-Sent Events, polling fallback, real-time communication");
+  </script>
+</body>
+
+</html>

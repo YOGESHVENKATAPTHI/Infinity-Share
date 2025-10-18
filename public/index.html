@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinity Share</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+  body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a202c, #2d3748);
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(26, 32, 44, 0.95);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .nav-item {
+      position: relative;
+    }
+    .nav-item::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -4px;
+      left: 0;
+      background-color: #63b3ed;
+      transition: width 0.3s ease;
+    }
+    .nav-item:hover::after {
+      width: 100%;
+    }
+
+    /* Hero Section */
+    .hero-bg {
+      background: url('bg3.jpg') no-repeat center center/cover;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-overlay {
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9));
+      height: 100%;
+      width: 100%;
+    }
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .animate-text {
+      animation: slideUp 1s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Authentication Section */
+    .tab-button.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .form-input {
+      transition: all 0.3s ease;
+    }
+    .form-input:focus {
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Features Section */
+    .feature-card {
+      background: #2d3748;
+      transition: all 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-15px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      background: #4a5568;
+    }
+
+    /* Testimonials Section */
+    .testimonial-card {
+      background: #2d3748;
+      position: relative;
+      overflow: hidden;
+    }
+    .testimonial-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+    }
+    .testimonial-card::before {
+      content: '“';
+      position: absolute;
+      top: -20px;
+      left: 20px;
+      font-size: 80px;
+      color: rgba(59, 130, 246, 0.2);
+    }
+
+    /* Pricing Section */
+    .pricing-card {
+      background: linear-gradient(135deg, #2d3748, #4a5568);
+      border: 2px solid #63b3ed;
+      transition: transform 0.3s ease;
+    }
+    .pricing-card:hover {
+      transform: scale(1.05);
+    }
+
+    /* Footer */
+    .footer-link:hover {
+      color: #63b3ed;
+      transform: translateX(5px);
+    }
+    .social-icon {
+      transition: all 0.3s ease;
+    }
+    .social-icon:hover {
+      transform: scale(1.2);
+    }
+
+    /* Loader */
+    .loader {
+      border: 8px solid rgba(255, 255, 255, 0.2);
+      border-top: 8px solid #3b82f6;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="text-center">
+      <div class="loader mx-auto mb-4"></div>
+      <p class="text-white text-lg font-medium">Processing your request, please wait...</p>
+    </div>
+  </div>
+  <header class="bg-gray-800 py-4 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center px-6">
+      <div class="flex items-center">
+        <i class="fas fa-comments text-3xl text-blue-500 mr-2"></i>
+        <h1 class="text-2xl font-bold text-white">Infinity Share</h1>
+      </div>
+      <button id="menu-button" class="md:hidden text-gray-400 hover:text-white focus:outline-none">
+        <i class="fas fa-bars text-2xl"></i>
+      </button>
+      <nav id="nav-menu" class="hidden md:flex space-x-6">
+        <ul class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6">
+          <li><a href="home.html" class="nav-item block transition duration-300">Home</a></li>
+          <li><a href="privacy.html" class="nav-item block transition duration-300">Privacy Policy</a></li>
+          <li><a href="about.html" class="nav-item block transition duration-300">About US</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div id="mobile-nav" class="md:hidden hidden flex flex-col py-4 bg-gray-700">
+      <ul class="space-y-2 px-6">
+        <li><a href="home.html" class="nav-item block transition duration-300">Home</a></li>
+        <li><a href="privacy.html" class="nav-item block transition duration-300">Privacy Policy</a></li>
+        <li><a href="about.html" class="nav-item block transition duration-300">About US</a></li>
+      </ul>
+    </div>
+  </header>
+  <section class="hero-bg flex items-center justify-center">
+    <div class="hero-overlay flex items-center justify-center">
+      <div class="text-center max-w-lg md:max-w-2xl mx-4 md:mx-auto p-6">
+        <div class="mb-6">
+          <i class="fas fa-globe text-6xl md:text-8xl text-blue-500 animate-spin-slow"></i>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-white leading-tight">Experience Secure & Seamless Communication</h1>
+        <p class="text-lg md:text-xl text-gray-300 mb-8">Join us in revolutionizing the way you connect with top-notch encryption and intuitive file sharing.</p>
+        <a href="#get-started" class="mt-4 inline-block bg-blue-500 text-white px-8 md:px-12 py-3 md:py-4 rounded-full hover:bg-blue-400 transition duration-300 text-lg font-semibold shadow-lg transform hover:scale-105">Get Started</a>
+      </div>
+    </div>
+  </section>
+  <section id="authentication" class="py-20 bg-gray-800">
+    <div class="container mx-auto px-6">
+      <h2 class="text-4xl font-bold mb-12 text-center text-white">Get Started with Infinity Share</h2>
+      <div class="flex flex-col md:flex-row justify-center gap-12 md:gap-24">
+        <!-- Mobile Forms -->
+        <div class="md:hidden">
+          <div class="flex justify-center mb-4">
+            <button id="toggle-login" class="bg-blue-500 text-white px-4 py-2 rounded-l-full focus:outline-none">Join Room</button>
+            <button id="toggle-signup" class="bg-gray-700 text-white px-4 py-2 rounded-r-full focus:outline-none">Create Room</button>
+          </div>
+          <div id="login-card" class="bg-gray-700 p-6 rounded-lg shadow-lg">
+            <h3 class="text-3xl font-semibold mb-4 text-center">Join Room</h3>
+            <form id="joinRoomForm" class="space-y-4">
+              <input type="text" id="joinRoomName" name="roomName" placeholder="Enter Room Name" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <input type="password" id="joinPassword" name="password" placeholder="Enter Room Password" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded-full hover:bg-blue-400 transition duration-300 text-lg font-semibold">Join</button>
+            </form>
+          </div>
+          <div id="signup-card" class="bg-gray-700 p-6 rounded-lg shadow-lg hidden">
+            <h3 class="text-3xl font-semibold mb-4 text-center">Create Room</h3>
+            <form id="createRoomForm" class="space-y-4">
+              <input type="text" id="roomName" name="roomName" placeholder="Enter Room Name" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <input type="password" id="password" name="password" placeholder="Enter Room Password" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded-full hover:bg-blue-400 transition duration-300 text-lg font-semibold">Create</button>
+            </form>
+          </div>
+        </div>
+        <!-- Desktop Forms -->
+        <div class="hidden md:flex md:space-x-24">
+          <div class="bg-gray-700 p-6 rounded-lg shadow-lg transform transition hover:scale-105 hover:shadow-2xl max-w-sm flex flex-col justify-center">
+            <h3 class="text-3xl font-semibold mb-10 text-center">Join Room</h3>
+            <form id="joinRoomFormDesktop" class="space-y-6">
+              <input type="text" id="joinRoomNameDesktop" name="roomName" placeholder="Enter Room Name" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <input type="password" id="joinPasswordDesktop" name="password" placeholder="Enter Room Password" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded-full hover:bg-blue-400 transition duration-300 text-lg font-semibold">Join</button>
+            </form>
+          </div>
+          <div class="bg-gray-700 p-6 rounded-lg shadow-lg transform transition hover:scale-105 hover:shadow-2xl max-w-sm">
+            <h3 class="text-3xl font-semibold mb-4 text-center">Create Room</h3>
+            <form id="createRoomFormDesktop" class="space-y-4">
+              <input type="text" id="roomNameDesktop" name="roomName" placeholder="Enter Room Name" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <input type="password" id="passwordDesktop" name="password" placeholder="Enter Room Password" class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+              <button type="submit" class="w-full bg-blue-500 text-white px-4 py-3 rounded-full hover:bg-blue-400 transition duration-300 text-lg font-semibold">Create</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Features Section -->
+  <section id="features" class="py-20" data-aos="fade-up">
+    <div class="container mx-auto px-6 text-center">
+      <h2 class="text-4xl font-bold mb-12">Our Key Features</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="feature-card p-8 rounded-xl shadow-lg">
+          <i class="fas fa-lock text-6xl text-blue-400 mb-4"></i>
+          <h3 class="text-2xl font-semibold mb-2">End-to-End Encryption</h3>
+          <p class="text-gray-300">Protect your messages and files with cutting-edge encryption technology.</p>
+        </div>
+        <div class="feature-card p-8 rounded-xl shadow-lg">
+          <i class="fas fa-share-square text-6xl text-green-400 mb-4"></i>
+          <h3 class="text-2xl font-semibold mb-2">Seamless File Sharing</h3>
+          <p class="text-gray-300">Share files effortlessly with our intuitive, all-format-compatible interface.</p>
+        </div>
+        <div class="feature-card p-8 rounded-xl shadow-lg">
+          <i class="fas fa-user-friends text-6xl text-yellow-400 mb-4"></i>
+          <h3 class="text-2xl font-semibold mb-2">User-Friendly Design</h3>
+          <p class="text-gray-300">Enjoy a clean, simple interface built for users of all levels.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section id="testimonials" class="py-20" data-aos="fade-up">
+    <div class="container mx-auto px-6">
+      <h2 class="text-4xl font-bold mb-12 text-center">What Our Users Say</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="testimonial-card p-8 rounded-xl shadow-lg text-center">
+          <p class="text-gray-300 mb-4 italic">"Transformed how we communicate securely with the team!"</p>
+          <div class="flex justify-center items-center mt-4">
+            <img src="https://img.freepik.com/premium-photo/indian-male-software-engineer-smiling_921410-26373.jpg" alt="Vikky" class="w-12 h-12 rounded-full mr-3">
+            <div>
+              <h4 class="text-lg font-semibold">Vikky</h4>
+              <p class="text-sm text-gray-400">Technical Engineer</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card p-8 rounded-xl shadow-lg text-center">
+          <p class="text-gray-300 mb-4 italic">"So easy to use and share files across our organization."</p>
+          <div class="flex justify-center items-center mt-4">
+            <img src="https://img.freepik.com/premium-photo/attractive-young-indian-man-sitting-front-laptop-smiling_899027-12381.jpg" alt="Srikanth" class="w-12 h-12 rounded-full mr-3">
+            <div>
+              <h4 class="text-lg font-semibold">Srikanth</h4>
+              <p class="text-sm text-gray-400">AIDS, SIT</p>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card p-8 rounded-xl shadow-lg text-center">
+          <p class="text-gray-300 mb-4 italic">"Secure and integrates perfectly with our tools."</p>
+          <div class="flex justify-center items-center mt-4">
+            <img src="https://media.istockphoto.com/id/2105280771/photo/professional-man-working-on-a-laptop-in-a-modern-office-setting.webp?b=1&s=170667a&w=0&k=20&c=TWdznicaM6j-3BSu7UKnO_fkaijcbtMwTn27O5Cu4eU=" alt="Gugan" class="w-12 h-12 rounded-full mr-3">
+            <div>
+              <h4 class="text-lg font-semibold">Gugan</h4>
+              <p class="text-sm text-gray-400">CSE, SEC</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing py-20" data-aos="fade-up">
+    <div class="container mx-auto px-6">
+      <h2 class="text-4xl font-bold mb-12 text-center">Our Pricing</h2>
+      <div class="pricing-card max-w-lg mx-auto p-8 rounded-xl shadow-lg text-center">
+        <i class="fas fa-gift text-6xl text-green-400 mb-6"></i>
+        <h3 class="text-3xl font-semibold mb-2">Simple Plan</h3>
+        <p class="text-2xl text-gray-200 mb-6">Free Forever</p>
+        <ul class="text-gray-300 mb-8 space-y-4">
+          <li class="flex items-center justify-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> Unlimited Messaging</li>
+          <li class="flex items-center justify-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> Secure File Sharing</li>
+          <li class="flex items-center justify-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> End-to-End Encryption</li>
+          <li class="flex items-center justify-center"><i class="fas fa-check-circle text-green-400 mr-2"></i> 24/7 Support</li>
+        </ul>
+        <a href="home.html" class="bg-blue-500 text-white px-8 py-4 rounded-full hover:bg-blue-600 transition duration-300 text-xl font-semibold shadow-lg">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div>
+          <h3 class="text-2xl font-semibold mb-4">Infinity Share</h3>
+          <p class="text-gray-400">Pioneering secure communication and file sharing with privacy at its core.</p>
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold mb-4">Quick Links</h3>
+          <ul class="text-gray-400 space-y-2">
+            <li><a href="#home" class="footer-link transition duration-300">Home</a></li>
+            <li><a href="#features" class="footer-link transition duration-300">Features</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold mb-4">Follow Us</h3>
+          <div class="flex space-x-6">
+            <a href="https://facebook.com" target="_blank" class="social-icon text-gray-400"><i class="fab fa-facebook-f text-2xl"></i></a>
+            <a href="https://twitter.com" target="_blank" class="social-icon text-gray-400"><i class="fab fa-twitter text-2xl"></i></a>
+            <a href="https://instagram.com" target="_blank" class="social-icon text-gray-400"><i class="fab fa-instagram text-2xl"></i></a>
+            <a href="https://youtube.com" target="_blank" class="social-icon text-gray-400"><i class="fab fa-youtube text-2xl"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="mt-12 text-center text-gray-400">
+        © 2024 Infinity Share. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.0.0/crypto-js.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+  const SERVER_URL = "http://localhost:3000";
+
+// Toggle between login and sign-up forms
+const toggleLoginButton = document.getElementById('toggle-login');
+const toggleSignupButton = document.getElementById('toggle-signup');
+const loginCard = document.getElementById('login-card');
+const signupCard = document.getElementById('signup-card');
+toggleLoginButton.addEventListener('click', () => {
+  loginCard.classList.remove('hidden');
+  signupCard.classList.add('hidden');
+  toggleLoginButton.classList.add('bg-blue-500');
+  toggleSignupButton.classList.remove('bg-blue-500');
+});
+toggleSignupButton.addEventListener('click', () => {
+  signupCard.classList.remove('hidden');
+  loginCard.classList.add('hidden');
+  toggleSignupButton.classList.add('bg-blue-500');
+  toggleLoginButton.classList.remove('bg-blue-500');
+});
+
+// Mobile navigation toggle
+const menuButton = document.getElementById('menu-button');
+const mobileNav = document.getElementById('mobile-nav');
+if (menuButton && mobileNav) {
+  menuButton.addEventListener('click', () => {
+    mobileNav.classList.toggle('hidden');
+  });
+}
+
+// Show/hide loading overlay
+function showLoadingOverlay() {
+  document.getElementById('loading-overlay').classList.remove('hidden');
+}
+function hideLoadingOverlay() {
+  document.getElementById('loading-overlay').classList.add('hidden');
+}
+
+// Function for handling form submission for "Create Room" and "Join Room"
+async function handleSubmit(event, endpoint, form) {
+  event.preventDefault();
+  showLoadingOverlay();
+  const formData = new FormData(form);
+  const roomName = formData.get('roomName');
+  const payload = {
+    roomName: roomName,
+    roomPassword: formData.get('password')
+  };
+  const options = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  };
+  try {
+    const response = await fetch(SERVER_URL + endpoint, options);
+    const result = await response.json();
+    if (response.ok) {
+      // Store the room name to localStorage for room.html to retrieve.
+      localStorage.setItem('roomName', roomName);
+      // Navigate to room.html which is present in the same directory.
+      window.location.href = "room.html";
+    } else {
+      alert('Error: ' + result.error);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error: ' + error.message);
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+// Function for handling "Join Room" submission separately
+async function joinRoom(form, event) {
+  event.preventDefault();
+  showLoadingOverlay();
+  const formData = new FormData(form);
+  const roomName = formData.get('roomName');
+  const roomPassword = formData.get('password');
+  try {
+    const response = await fetch(SERVER_URL + '/join-room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomName, roomPassword })
+    });
+    const data = await response.json();
+    if (response.ok) {
+      localStorage.setItem('roomName', roomName);
+      window.location.href = "room.html";
+    } else {
+      alert('Error: ' + data.error);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error: ' + error.message);
+  } finally {
+    hideLoadingOverlay();
+  }
+}
+
+// Attach event listeners to the forms
+document.getElementById('createRoomForm').addEventListener('submit', (event) => {
+  handleSubmit(event, '/create-room', event.target);
+});
+document.getElementById('createRoomFormDesktop').addEventListener('submit', (event) => {
+  handleSubmit(event, '/create-room', event.target);
+});
+document.getElementById('joinRoomForm').addEventListener('submit', (event) => {
+  joinRoom(event.target, event);
+});
+document.getElementById('joinRoomFormDesktop').addEventListener('submit', (event) => {
+  joinRoom(event.target, event);
+});
+  </script>
+</body>
+</html>
